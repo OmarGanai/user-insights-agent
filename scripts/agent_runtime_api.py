@@ -48,6 +48,27 @@ class _Handler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         path = self.path.split("?", 1)[0]
         try:
+            if path.startswith("/v1/tenants/") and "/prompt-profiles/" in path:
+                tenant_part = path[len("/v1/tenants/") :]
+                tenant_id, _, profile_part = tenant_part.partition("/prompt-profiles/")
+                tenant_id = tenant_id.strip("/")
+                if profile_part.endswith("/rollout"):
+                    prompt_profile = unquote(profile_part[: -len("/rollout")].strip("/") or "default")
+                    payload = self.runtime.tools.get_prompt_profile_rollout(
+                        tenant_id=tenant_id,
+                        prompt_profile=prompt_profile,
+                    )
+                    self._send(200, payload)
+                    return
+                if profile_part.endswith("/evaluation"):
+                    prompt_profile = unquote(profile_part[: -len("/evaluation")].strip("/") or "default")
+                    payload = self.runtime.tools.evaluate_prompt_profile(
+                        tenant_id=tenant_id,
+                        prompt_profile=prompt_profile,
+                    )
+                    self._send(200, payload)
+                    return
+
             if path.startswith("/v1/sessions/") and path.endswith("/artifacts"):
                 session_id = path[len("/v1/sessions/") : -len("/artifacts")].strip("/")
                 payload = self.runtime.list_artifacts(session_id)
@@ -90,6 +111,19 @@ class _Handler(BaseHTTPRequestHandler):
         path = self.path.split("?", 1)[0]
         try:
             body = _json_body(self)
+
+            if path.startswith("/v1/tenants/") and "/prompt-profiles/" in path and path.endswith("/rollout"):
+                tenant_part = path[len("/v1/tenants/") :]
+                tenant_id, _, profile_part = tenant_part.partition("/prompt-profiles/")
+                tenant_id = tenant_id.strip("/")
+                prompt_profile = unquote(profile_part[: -len("/rollout")].strip("/") or "default")
+                payload = self.runtime.tools.update_prompt_profile_rollout(
+                    tenant_id=tenant_id,
+                    prompt_profile=prompt_profile,
+                    rollout=body,
+                )
+                self._send(200, payload)
+                return
 
             if path == "/v1/sessions":
                 payload = self.runtime.create_session(

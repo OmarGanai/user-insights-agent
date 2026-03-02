@@ -15,6 +15,8 @@ from .models import AgentSession, AgentTask, ApprovalRequest, ArtifactRef, utc_n
 
 INDEX_FILE = ".indexes.json"
 DEFAULT_WORKSPACE_ROOT = Path(__file__).resolve().parent.parent / "workspace"
+DEFAULT_PROMPT_VERSION = "v1"
+DEFAULT_CANARY_PERCENT = 10
 
 
 class FileWorkspaceStore:
@@ -80,6 +82,24 @@ class FileWorkspaceStore:
                     "enabled": False,
                     "webhook_env": "SLACK_WEBHOOK_URL",
                 },
+                "prompt_profiles": {
+                    "default": {
+                        "stable_version": DEFAULT_PROMPT_VERSION,
+                        "versions": {
+                            DEFAULT_PROMPT_VERSION: {
+                                "path": "default.md",
+                                "description": "Tenant default prompt profile",
+                            }
+                        },
+                        "canary": {
+                            "enabled": False,
+                            "version": "",
+                            "percent": DEFAULT_CANARY_PERCENT,
+                            "start_at": "",
+                            "end_at": "",
+                        },
+                    }
+                },
             }
             self._write_text(tenant_config, json.dumps(template, indent=2) + "\n")
 
@@ -128,13 +148,21 @@ class FileWorkspaceStore:
         self.ensure_tenant(tenant_id)
         session_id = self._next_id("ses")
         run_id = session_id
+        prompt_selection = self.resolve_prompt_profile(
+            tenant_id=tenant_id,
+            prompt_profile=prompt_profile,
+            session_id=session_id,
+        )
         checkpoint_rel = f"workspace/tenants/{tenant_id}/runs/{run_id}/checkpoint.json"
         now = utc_now_iso()
         session = AgentSession(
             id=session_id,
             tenant_id=tenant_id,
             objective=objective.strip(),
-            prompt_profile=prompt_profile.strip() or "default",
+            prompt_profile=prompt_selection["profile"],
+            prompt_version=prompt_selection["version"],
+            prompt_variant=prompt_selection["variant"],
+            prompt_path=prompt_selection["path"],
             status="pending",
             mode=mode.strip() or "hybrid",
             iteration_count=0,
@@ -496,6 +524,244 @@ class FileWorkspaceStore:
             path.unlink()
         return payload
 
+    def resolve_prompt_profile(
+        self,
+        tenant_id: str,
+        prompt_profile: str,
+        session_id: str,
+        now_utc: Optional[datetime] = None,
+    ) -> Dict[str, str]:
+        profile_name = prompt_profile.strip() or "default"
+        config = self.read_tenant_config(tenant_id)
+        changed, profile_cfg = self._upsert_prompt_profile_config(config, profile_name)
+
+        stable_version = str(profile_cfg.get("stable_version") or DEFAULT_PROMPT_VERSION).strip() or DEFAULT_PROMPT_VERSION
+        versions = profile_cfg.get("versions")
+        if not isinstance(versions, dict):
+            versions = {}
+            profile_cfg["versions"] = versions
+            changed = True
+
+        if stable_version not in versions:
+            versions[stable_version] = {"path": f"{profile_name}.md", "description": ""}
+            changed = True
+
+        canary_cfg = profile_cfg.get("canary")
+        if not isinstance(canary_cfg, dict):
+            canary_cfg = {}
+            profile_cfg["canary"] = canary_cfg
+            changed = True
+
+        selected_version = stable_version
+        selected_variant = "stable"
+
+        if self._canary_active(canary_cfg, now_utc=now_utc):
+            canary_version = str(canary_cfg.get("version") or "").strip()
+            canary_percent = int(canary_cfg.get("percent") or 0)
+            if canary_version and canary_version in versions and canary_percent > 0:
+                bucket = self._canary_bucket(f"{tenant_id}:{profile_name}:{session_id}")
+                if bucket < canary_percent:
+                    selected_version = canary_version
+                    selected_variant = "canary"
+
+        selected_cfg = versions.get(selected_version)
+        if not isinstance(selected_cfg, dict):
+            selected_cfg = {"path": f"{profile_name}.md", "description": ""}
+            versions[selected_version] = selected_cfg
+            changed = True
+
+        rel_path = str(selected_cfg.get("path") or "").strip() or f"{profile_name}.md"
+        rel = self._safe_prompt_path(rel_path)
+        prompt_file = self.tenant_root(tenant_id) / "prompts" / rel
+        if not prompt_file.exists():
+            prompt_file.parent.mkdir(parents=True, exist_ok=True)
+            prompt_file.write_text(
+                "# Prompt Profile\n"
+                f"profile={profile_name}\n"
+                f"version={selected_version}\n",
+                encoding="utf-8",
+            )
+
+        if changed:
+            self.write_tenant_config(tenant_id, config)
+
+        return {
+            "profile": profile_name,
+            "version": selected_version,
+            "variant": selected_variant,
+            "path": self._relative_to_workspace(prompt_file),
+        }
+
+    def get_prompt_profile_rollout(self, tenant_id: str, prompt_profile: str) -> Dict[str, Any]:
+        profile_name = prompt_profile.strip() or "default"
+        config = self.read_tenant_config(tenant_id)
+        changed, profile_cfg = self._upsert_prompt_profile_config(config, profile_name)
+        if changed:
+            self.write_tenant_config(tenant_id, config)
+
+        versions = profile_cfg.get("versions")
+        if not isinstance(versions, dict):
+            versions = {}
+
+        canary = profile_cfg.get("canary")
+        if not isinstance(canary, dict):
+            canary = {}
+
+        stable_version = str(profile_cfg.get("stable_version") or DEFAULT_PROMPT_VERSION).strip() or DEFAULT_PROMPT_VERSION
+        return {
+            "tenant_id": tenant_id,
+            "prompt_profile": profile_name,
+            "stable_version": stable_version,
+            "versions": versions,
+            "canary": {
+                "enabled": bool(canary.get("enabled", False)),
+                "version": str(canary.get("version") or "").strip(),
+                "percent": int(canary.get("percent") or 0),
+                "start_at": str(canary.get("start_at") or "").strip(),
+                "end_at": str(canary.get("end_at") or "").strip(),
+                "active_now": self._canary_active(canary),
+            },
+        }
+
+    def update_prompt_profile_rollout(self, tenant_id: str, prompt_profile: str, rollout: Dict[str, Any]) -> Dict[str, Any]:
+        profile_name = prompt_profile.strip() or "default"
+        config = self.read_tenant_config(tenant_id)
+        _, profile_cfg = self._upsert_prompt_profile_config(config, profile_name)
+
+        if not isinstance(rollout, dict):
+            raise ValueError("rollout payload must be an object")
+
+        versions_update = rollout.get("versions")
+        if versions_update is not None:
+            if not isinstance(versions_update, dict):
+                raise ValueError("rollout.versions must be an object")
+            normalized_versions: Dict[str, Dict[str, str]] = {}
+            for version_key, value in versions_update.items():
+                version = str(version_key or "").strip()
+                if not version:
+                    raise ValueError("rollout.versions keys must be non-empty")
+                if not isinstance(value, dict):
+                    raise ValueError("rollout.versions entries must be objects")
+                path = str(value.get("path") or "").strip()
+                if not path:
+                    raise ValueError(f"rollout.versions.{version}.path is required")
+                rel = self._safe_prompt_path(path)
+                normalized_versions[version] = {
+                    "path": str(rel),
+                    "description": str(value.get("description") or "").strip(),
+                }
+            profile_cfg["versions"] = normalized_versions
+
+        if "stable_version" in rollout:
+            stable_version = str(rollout.get("stable_version") or "").strip()
+            if not stable_version:
+                raise ValueError("rollout.stable_version cannot be empty")
+            profile_cfg["stable_version"] = stable_version
+
+        canary_update = rollout.get("canary")
+        if canary_update is not None:
+            if not isinstance(canary_update, dict):
+                raise ValueError("rollout.canary must be an object")
+            canary_cfg = profile_cfg.setdefault("canary", {})
+            if not isinstance(canary_cfg, dict):
+                canary_cfg = {}
+                profile_cfg["canary"] = canary_cfg
+            for key in ("enabled", "version", "percent", "start_at", "end_at"):
+                if key in canary_update:
+                    canary_cfg[key] = canary_update[key]
+
+        versions = profile_cfg.get("versions")
+        if not isinstance(versions, dict) or not versions:
+            raise ValueError("Prompt profile rollout must define at least one version")
+
+        stable_version = str(profile_cfg.get("stable_version") or "").strip() or DEFAULT_PROMPT_VERSION
+        if stable_version not in versions:
+            raise ValueError("stable_version must exist in versions map")
+
+        canary_cfg = profile_cfg.get("canary")
+        if not isinstance(canary_cfg, dict):
+            canary_cfg = {}
+            profile_cfg["canary"] = canary_cfg
+
+        canary_percent = int(canary_cfg.get("percent") or 0)
+        if canary_percent < 0 or canary_percent > 100:
+            raise ValueError("canary.percent must be between 0 and 100")
+        canary_cfg["percent"] = canary_percent
+
+        canary_version = str(canary_cfg.get("version") or "").strip()
+        if canary_version and canary_version not in versions:
+            raise ValueError("canary.version must exist in versions map")
+
+        for key in ("start_at", "end_at"):
+            value = str(canary_cfg.get(key) or "").strip()
+            if value:
+                self._parse_iso8601(value)
+            canary_cfg[key] = value
+
+        for version_cfg in versions.values():
+            if not isinstance(version_cfg, dict):
+                continue
+            rel = self._safe_prompt_path(str(version_cfg.get("path") or "").strip() or f"{profile_name}.md")
+            version_cfg["path"] = str(rel)
+
+        self.write_tenant_config(tenant_id, config)
+        return self.get_prompt_profile_rollout(tenant_id, profile_name)
+
+    def evaluate_prompt_profile(self, tenant_id: str, prompt_profile: str) -> Dict[str, Any]:
+        profile_name = prompt_profile.strip() or "default"
+        indexes = self._read_indexes()
+        buckets: Dict[str, Dict[str, Any]] = {}
+        total = 0
+
+        for session_id, mapped_tenant in indexes.get("sessions", {}).items():
+            if str(mapped_tenant) != tenant_id:
+                continue
+            session_path = self._session_path(tenant_id, str(session_id))
+            session = self._read_json(session_path, default={})
+            if not session:
+                continue
+            if str(session.get("prompt_profile") or "default") != profile_name:
+                continue
+
+            total += 1
+            version = str(session.get("prompt_version") or DEFAULT_PROMPT_VERSION)
+            variant = str(session.get("prompt_variant") or "stable")
+            bucket_key = f"{version}:{variant}"
+            bucket = buckets.setdefault(
+                bucket_key,
+                {
+                    "prompt_version": version,
+                    "prompt_variant": variant,
+                    "sessions": 0,
+                    "status_counts": {},
+                    "avg_iterations": 0.0,
+                    "completed_ratio": 0.0,
+                },
+            )
+
+            bucket["sessions"] += 1
+            status = str(session.get("status") or "pending")
+            status_counts = bucket["status_counts"]
+            status_counts[status] = int(status_counts.get(status) or 0) + 1
+            bucket["avg_iterations"] += float(session.get("iteration_count") or 0)
+
+        rows: List[Dict[str, Any]] = []
+        for bucket in buckets.values():
+            sessions = int(bucket.get("sessions") or 0)
+            completed = int((bucket.get("status_counts") or {}).get("completed") or 0)
+            if sessions > 0:
+                bucket["avg_iterations"] = round(float(bucket["avg_iterations"]) / float(sessions), 3)
+                bucket["completed_ratio"] = round(float(completed) / float(sessions), 3)
+            rows.append(bucket)
+
+        rows.sort(key=lambda row: (str(row["prompt_version"]), str(row["prompt_variant"])))
+        return {
+            "tenant_id": tenant_id,
+            "prompt_profile": profile_name,
+            "total_sessions": total,
+            "buckets": rows,
+        }
+
     def append_event(self, session_id: str, event: Dict[str, Any]) -> None:
         session = self.get_session(session_id)
         tenant_id = session["tenant_id"]
@@ -595,6 +861,117 @@ class FileWorkspaceStore:
         path = self.tenant_root(tenant_id) / "config" / "tenant.yaml"
         self._write_text(path, json.dumps(payload, indent=2) + "\n")
         return payload
+
+    def _upsert_prompt_profile_config(self, config: Dict[str, Any], prompt_profile: str) -> tuple[bool, Dict[str, Any]]:
+        changed = False
+        prompt_profiles = config.get("prompt_profiles")
+        if not isinstance(prompt_profiles, dict):
+            prompt_profiles = {}
+            config["prompt_profiles"] = prompt_profiles
+            changed = True
+
+        profile_cfg = prompt_profiles.get(prompt_profile)
+        if not isinstance(profile_cfg, dict):
+            profile_cfg = {
+                "stable_version": DEFAULT_PROMPT_VERSION,
+                "versions": {
+                    DEFAULT_PROMPT_VERSION: {
+                        "path": f"{prompt_profile}.md",
+                        "description": "",
+                    }
+                },
+                "canary": {
+                    "enabled": False,
+                    "version": "",
+                    "percent": DEFAULT_CANARY_PERCENT,
+                    "start_at": "",
+                    "end_at": "",
+                },
+            }
+            prompt_profiles[prompt_profile] = profile_cfg
+            changed = True
+
+        versions = profile_cfg.get("versions")
+        if not isinstance(versions, dict) or not versions:
+            profile_cfg["versions"] = {
+                DEFAULT_PROMPT_VERSION: {
+                    "path": f"{prompt_profile}.md",
+                    "description": "",
+                }
+            }
+            versions = profile_cfg["versions"]
+            changed = True
+
+        stable_version = str(profile_cfg.get("stable_version") or "").strip()
+        if not stable_version:
+            stable_version = DEFAULT_PROMPT_VERSION
+            profile_cfg["stable_version"] = stable_version
+            changed = True
+        if stable_version not in versions:
+            versions[stable_version] = {
+                "path": f"{prompt_profile}.md",
+                "description": "",
+            }
+            changed = True
+
+        canary = profile_cfg.get("canary")
+        if not isinstance(canary, dict):
+            canary = {}
+            profile_cfg["canary"] = canary
+            changed = True
+        defaults = {
+            "enabled": False,
+            "version": "",
+            "percent": DEFAULT_CANARY_PERCENT,
+            "start_at": "",
+            "end_at": "",
+        }
+        for key, default_value in defaults.items():
+            if key not in canary:
+                canary[key] = default_value
+                changed = True
+
+        return changed, profile_cfg
+
+    def _canary_bucket(self, key: str) -> int:
+        digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
+        return int(digest[:8], 16) % 100
+
+    def _canary_active(self, canary_cfg: Dict[str, Any], now_utc: Optional[datetime] = None) -> bool:
+        if not bool(canary_cfg.get("enabled", False)):
+            return False
+        percent = int(canary_cfg.get("percent") or 0)
+        if percent <= 0:
+            return False
+        start = str(canary_cfg.get("start_at") or "").strip()
+        end = str(canary_cfg.get("end_at") or "").strip()
+        now = now_utc or datetime.now(timezone.utc)
+        if start:
+            start_dt = self._parse_iso8601(start)
+            if now < start_dt:
+                return False
+        if end:
+            end_dt = self._parse_iso8601(end)
+            if now > end_dt:
+                return False
+        return True
+
+    def _safe_prompt_path(self, value: str) -> Path:
+        rel = Path(value.strip())
+        if rel.is_absolute() or ".." in rel.parts:
+            raise ValueError("Prompt path must be relative within tenant prompt directory")
+        if not rel.parts:
+            raise ValueError("Prompt path is required")
+        return rel
+
+    def _parse_iso8601(self, value: str) -> datetime:
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError as exc:
+            raise ValueError(f"Invalid ISO-8601 timestamp: {value}") from exc
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed.astimezone(timezone.utc)
 
     def _tenant_for_session(self, session_id: str) -> str:
         indexes = self._read_indexes()

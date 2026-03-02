@@ -39,6 +39,9 @@ class ToolRegistry:
             "read_metric_contract": self.read_metric_contract,
             "update_metric_contract": self.update_metric_contract,
             "delete_metric_contract": self.delete_metric_contract,
+            "get_prompt_profile_rollout": self.get_prompt_profile_rollout,
+            "update_prompt_profile_rollout": self.update_prompt_profile_rollout,
+            "evaluate_prompt_profile": self.evaluate_prompt_profile,
             "discover_amplitude_capabilities": self.discover_amplitude_capabilities,
             "discover_typeform_capabilities": self.discover_typeform_capabilities,
             "discover_slack_capabilities": self.discover_slack_capabilities,
@@ -140,6 +143,26 @@ class ToolRegistry:
 
     def delete_metric_contract(self, tenant_id: str) -> Dict[str, Any]:
         return self.store.delete_metric_contract(tenant_id=tenant_id)
+
+    # Prompt profile rollout tools
+    def get_prompt_profile_rollout(self, tenant_id: str, prompt_profile: str = "default") -> Dict[str, Any]:
+        return self.store.get_prompt_profile_rollout(tenant_id=tenant_id, prompt_profile=prompt_profile)
+
+    def update_prompt_profile_rollout(
+        self,
+        tenant_id: str,
+        prompt_profile: str = "default",
+        rollout: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        payload = rollout if isinstance(rollout, dict) else {}
+        return self.store.update_prompt_profile_rollout(
+            tenant_id=tenant_id,
+            prompt_profile=prompt_profile,
+            rollout=payload,
+        )
+
+    def evaluate_prompt_profile(self, tenant_id: str, prompt_profile: str = "default") -> Dict[str, Any]:
+        return self.store.evaluate_prompt_profile(tenant_id=tenant_id, prompt_profile=prompt_profile)
 
     # Discovery tools
     def discover_amplitude_capabilities(self, tenant_id: str, force_refresh: bool = False) -> Dict[str, Any]:

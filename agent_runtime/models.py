@@ -27,6 +27,9 @@ class AgentSession:
     tenant_id: str
     objective: str
     prompt_profile: str
+    prompt_version: str
+    prompt_variant: str
+    prompt_path: str
     status: SessionStatus
     mode: str
     iteration_count: int

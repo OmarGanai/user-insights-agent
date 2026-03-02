@@ -133,6 +133,25 @@ Run the agent-runtime API locally:
 python scripts/agent_runtime_api.py --host 127.0.0.1 --port 8788
 ```
 
+Prompt-profile rollout APIs (example):
+
+```bash
+curl -sS http://127.0.0.1:8788/v1/tenants/tenant-default/prompt-profiles/default/rollout
+```
+
+```bash
+curl -sS -X POST http://127.0.0.1:8788/v1/tenants/tenant-default/prompt-profiles/default/rollout \
+  -H "Content-Type: application/json" \
+  -d '{
+    "stable_version": "v1",
+    "versions": {
+      "v1": {"path": "default.md"},
+      "v2": {"path": "default_v2.md"}
+    },
+    "canary": {"enabled": true, "version": "v2", "percent": 10}
+  }'
+```
+
 Run public-safety scan:
 
 ```bash

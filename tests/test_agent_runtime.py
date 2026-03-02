@@ -147,5 +147,136 @@ class AgentRuntimeDiscoveryTest(unittest.TestCase):
         self.assertIn("ttl_expires_at", slk)
 
 
+class AgentRuntimePromptProfileRolloutTest(unittest.TestCase):
+    def _runtime(self) -> AgentRuntime:
+        self.tmp_dir = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp_dir.cleanup)
+        store = FileWorkspaceStore(root=Path(self.tmp_dir.name) / "workspace")
+        return AgentRuntime(store=store)
+
+    def test_create_session_resolves_prompt_profile_version_metadata(self) -> None:
+        runtime = self._runtime()
+        session = runtime.create_session(
+            tenant_id="tenant-rollout",
+            objective="Run digest",
+            prompt_profile="weekly_digest",
+        )
+
+        self.assertEqual(session["prompt_profile"], "weekly_digest")
+        self.assertEqual(session["prompt_version"], "v1")
+        self.assertEqual(session["prompt_variant"], "stable")
+        prompt_file = runtime.store.root / session["prompt_path"]
+        self.assertTrue(prompt_file.exists())
+        self.assertTrue(prompt_file.name.endswith(".md"))
+
+    def test_canary_rollout_selects_canary_variant_when_percent_is_100(self) -> None:
+        runtime = self._runtime()
+        runtime.tools.update_prompt_profile_rollout(
+            tenant_id="tenant-rollout",
+            prompt_profile="weekly_digest",
+            rollout={
+                "stable_version": "v1",
+                "versions": {
+                    "v1": {"path": "weekly_digest.md"},
+                    "v2": {"path": "weekly_digest_v2.md"},
+                },
+                "canary": {
+                    "enabled": True,
+                    "version": "v2",
+                    "percent": 100,
+                },
+            },
+        )
+
+        session = runtime.create_session(
+            tenant_id="tenant-rollout",
+            objective="Run digest",
+            prompt_profile="weekly_digest",
+        )
+
+        self.assertEqual(session["prompt_version"], "v2")
+        self.assertEqual(session["prompt_variant"], "canary")
+        prompt_file = runtime.store.root / session["prompt_path"]
+        self.assertTrue(prompt_file.exists())
+
+    def test_prompt_profile_evaluation_reports_version_buckets(self) -> None:
+        runtime = self._runtime()
+        runtime.tools.update_prompt_profile_rollout(
+            tenant_id="tenant-rollout",
+            prompt_profile="weekly_digest",
+            rollout={
+                "stable_version": "v1",
+                "versions": {
+                    "v1": {"path": "weekly_digest.md"},
+                    "v2": {"path": "weekly_digest_v2.md"},
+                },
+                "canary": {
+                    "enabled": True,
+                    "version": "v2",
+                    "percent": 0,
+                },
+            },
+        )
+        stable_session = runtime.create_session(
+            tenant_id="tenant-rollout",
+            objective="Stable run",
+            prompt_profile="weekly_digest",
+        )
+        runtime.run_turn(
+            session_id=stable_session["id"],
+            tool_calls=[
+                {
+                    "tool": "complete_task",
+                    "args": {
+                        "session_id": stable_session["id"],
+                        "status": "completed",
+                    },
+                }
+            ],
+        )
+
+        runtime.tools.update_prompt_profile_rollout(
+            tenant_id="tenant-rollout",
+            prompt_profile="weekly_digest",
+            rollout={
+                "canary": {
+                    "enabled": True,
+                    "version": "v2",
+                    "percent": 100,
+                }
+            },
+        )
+        canary_session = runtime.create_session(
+            tenant_id="tenant-rollout",
+            objective="Canary run",
+            prompt_profile="weekly_digest",
+        )
+        runtime.run_turn(
+            session_id=canary_session["id"],
+            tool_calls=[
+                {
+                    "tool": "create_task",
+                    "args": {
+                        "session_id": canary_session["id"],
+                        "title": "Collect metrics",
+                        "metadata": {},
+                    },
+                }
+            ],
+        )
+
+        evaluation = runtime.tools.evaluate_prompt_profile(
+            tenant_id="tenant-rollout",
+            prompt_profile="weekly_digest",
+        )
+        self.assertEqual(evaluation["total_sessions"], 2)
+        bucket_keys = {
+            (row["prompt_version"], row["prompt_variant"])
+            for row in evaluation["buckets"]
+        }
+        self.assertIn(("v1", "stable"), bucket_keys)
+        self.assertIn(("v2", "canary"), bucket_keys)
+
+
 if __name__ == "__main__":
     unittest.main()

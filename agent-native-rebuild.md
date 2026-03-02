@@ -18,7 +18,7 @@
 - [ ] Build Agent Console UI parity against new `/v1/*` runtime APIs.
 - [ ] Add capability refresh UX and approval inbox UX in the console.
 - [x] Add CI workflow wiring for `scripts/public_safety_scan.py` and deterministic test gate.
-- [ ] Complete prompt-profile canary rollout plumbing and evaluation harness.
+- [x] Complete prompt-profile canary rollout plumbing and evaluation harness.
 
 ## Summary
 Rebuild the current pipeline into a true agent system, implemented on Google ADK (Python), that is public-safe by default (no tenant data in code/history/docs), while supporting private tenant overlays (including tenant) through runtime config and secrets.
@@ -206,6 +206,11 @@ All tool contracts are implemented as ADK tools (plus MCP-compatible integration
 ### Capability APIs
 1. `GET /v1/tenants/{tenant_id}/capabilities`
 2. `POST /v1/tenants/{tenant_id}/capabilities/refresh`
+
+### Prompt Profile APIs
+1. `GET /v1/tenants/{tenant_id}/prompt-profiles/{profile}/rollout`
+2. `POST /v1/tenants/{tenant_id}/prompt-profiles/{profile}/rollout`
+3. `GET /v1/tenants/{tenant_id}/prompt-profiles/{profile}/evaluation`
 
 ### Artifact APIs
 1. `GET /v1/sessions/{id}/artifacts`
