@@ -88,6 +88,32 @@ class ArtifactRef:
 
 
 @dataclass
+class ChatMessage:
+    id: str
+    session_id: str
+    role: Literal["user", "assistant", "system"]
+    content: str
+    created_at: str
+    meta: Dict[str, Any]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
+class ToolPlan:
+    plan_id: str
+    tool_calls: list[Dict[str, Any]]
+    backend: Literal["gemini", "deterministic"]
+    fallback_used: bool
+    raw_model_output: str
+    validation_warnings: list[str]
+
+    def to_dict(self) -> Dict[str, Any]:
+        return asdict(self)
+
+
+@dataclass
 class ToolResult:
     success: bool
     output: Any

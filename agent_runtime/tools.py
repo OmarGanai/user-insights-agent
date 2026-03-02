@@ -30,6 +30,7 @@ class ToolRegistry:
             "read_artifact": self.read_artifact,
             "update_artifact": self.update_artifact,
             "delete_artifact": self.delete_artifact,
+            "list_artifacts": self.list_artifacts,
             "create_approval_request": self.create_approval_request,
             "request_approval": self.create_approval_request,
             "list_approval_requests": self.list_approval_requests,
@@ -102,6 +103,9 @@ class ToolRegistry:
 
     def delete_artifact(self, path: str) -> Dict[str, Any]:
         return self.store.delete_artifact(path)
+
+    def list_artifacts(self, session_id: str) -> Dict[str, Any]:
+        return {"artifacts": self.store.list_artifacts(session_id=session_id)}
 
     # Approval tools
     def create_approval_request(self, session_id: str, action_type: str, payload_path: str, summary: str) -> Dict[str, Any]:

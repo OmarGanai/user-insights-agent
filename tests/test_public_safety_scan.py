@@ -17,6 +17,16 @@ class PublicSafetyScanTest(unittest.TestCase):
             self.assertEqual(len(findings), 1)
             self.assertEqual(findings[0]["path"], "docs/note.md")
 
+    def test_identifier_scan_detects_banned_tokens_in_tracked_source_file_shapes(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            banned_token = "ee" + "va"
+            (root / "README.md").write_text(f"Pilot tenant token: {banned_token}", encoding="utf-8")
+
+            findings = scan_identifiers(root)
+            self.assertEqual(len(findings), 1)
+            self.assertEqual(findings[0]["path"], "README.md")
+
     def test_runtime_artifact_scan_detects_workspace_runs_and_tmp(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)

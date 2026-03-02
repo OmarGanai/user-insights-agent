@@ -72,7 +72,9 @@ class AgentRuntimeApiTest(unittest.TestCase):
             html = response.read().decode("utf-8")
             self.assertEqual(int(response.status), 200)
         self.assertIn("Agent Console", html)
-        self.assertIn("/v1/sessions", html)
+        self.assertIn("Show Advanced", html)
+        self.assertIn("Transcript", html)
+        self.assertIn("/v1/sessions/{id}/turn", html)
 
     def test_runtime_descriptor_and_capability_refresh(self) -> None:
         runtime_info = self._request("GET", "/v1/runtime")
@@ -80,6 +82,9 @@ class AgentRuntimeApiTest(unittest.TestCase):
         self.assertIn("available", runtime_info)
         self.assertTrue(runtime_info["native_objects_wired"])
         self.assertIn("runner_object", runtime_info)
+        self.assertEqual(runtime_info["planner_backend_default"], "gemini")
+        self.assertTrue(runtime_info["planner_fallback_enabled"])
+        self.assertTrue(runtime_info["chat_mode_enabled"])
 
         refreshed = self._request("POST", "/v1/tenants/tenant-api/capabilities/refresh", payload={})
         self.assertEqual(refreshed["tenant_id"], "tenant-api")
@@ -160,6 +165,62 @@ class AgentRuntimeApiTest(unittest.TestCase):
         resolved_rows = self._request("GET", "/v1/tenants/tenant-api/approvals/resolved")
         resolved_ids = [row["id"] for row in resolved_rows["approvals"]]
         self.assertIn(approval_id, resolved_ids)
+
+    def test_chat_messages_and_context_endpoints(self) -> None:
+        session = self._request(
+            "POST",
+            "/v1/sessions",
+            payload={
+                "tenant_id": "tenant-api",
+                "objective": "Chat API test",
+                "prompt_profile": "default",
+                "mode": "hybrid",
+            },
+            expect_status=201,
+        )
+        session_id = session["id"]
+
+        chat = self._request(
+            "POST",
+            f"/v1/sessions/{session_id}/chat",
+            payload={"message": "Generate weekly digest preview", "client": "console_chat", "options": {}},
+        )
+        self.assertIn(chat["assistant_message"]["status"], {"completed", "waiting_approval", "blocked", "failed"})
+        self.assertIn("backend", chat["planner"])
+        self.assertIn("results", chat["execution"])
+
+        messages = self._request("GET", f"/v1/sessions/{session_id}/messages")
+        self.assertGreaterEqual(len(messages["messages"]), 2)
+        roles = [row["role"] for row in messages["messages"]]
+        self.assertEqual(roles[0], "user")
+        self.assertEqual(roles[1], "assistant")
+
+        context = self._request("GET", f"/v1/sessions/{session_id}/context")
+        self.assertIn("static", context)
+        self.assertIn("dynamic", context)
+        self.assertIn("vocabulary_map", context["dynamic"])
+
+    def test_chat_endpoint_validates_payload(self) -> None:
+        session = self._request(
+            "POST",
+            "/v1/sessions",
+            payload={
+                "tenant_id": "tenant-api",
+                "objective": "Chat API validation test",
+                "prompt_profile": "default",
+                "mode": "hybrid",
+            },
+            expect_status=201,
+        )
+        session_id = session["id"]
+
+        invalid = self._request(
+            "POST",
+            f"/v1/sessions/{session_id}/chat",
+            payload={"message": "", "options": "bad"},
+            expect_status=400,
+        )
+        self.assertIn("error", invalid)
 
 
 if __name__ == "__main__":

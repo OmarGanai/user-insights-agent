@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from uuid import uuid4
 
-from .models import AgentSession, AgentTask, ApprovalRequest, ArtifactRef, utc_now_iso
+from .models import AgentSession, AgentTask, ApprovalRequest, ArtifactRef, ChatMessage, utc_now_iso
 
 
 INDEX_FILE = ".indexes.json"
@@ -132,6 +132,9 @@ class FileWorkspaceStore:
 
     def _checkpoint_path(self, tenant_id: str, run_id: str) -> Path:
         return self.tenant_root(tenant_id) / "runs" / run_id / "checkpoint.json"
+
+    def _conversation_path(self, tenant_id: str, run_id: str) -> Path:
+        return self.tenant_root(tenant_id) / "runs" / run_id / "conversation.ndjson"
 
     def _events_path(self, tenant_id: str) -> Path:
         return self.tenant_root(tenant_id) / "events" / "events.ndjson"
@@ -392,6 +395,22 @@ class FileWorkspaceStore:
         indexes["artifacts"].pop(payload["path"], None)
         self._write_indexes(indexes)
         return payload
+
+    def list_artifacts(self, session_id: str) -> List[Dict[str, Any]]:
+        session = self.get_session(session_id)
+        run_dir = self.tenant_root(session["tenant_id"]) / "runs" / session_id
+        if not run_dir.exists():
+            return []
+        artifacts: List[Dict[str, Any]] = []
+        for path in sorted(run_dir.rglob("*")):
+            if not path.is_file():
+                continue
+            if path.name in {"checkpoint.json", "conversation.ndjson"}:
+                continue
+            if "/.artifacts/" in str(path):
+                continue
+            artifacts.append({"path": self._relative_to_workspace(path), "size": path.stat().st_size})
+        return artifacts
 
     def create_approval_request(
         self,
@@ -800,6 +819,53 @@ class FileWorkspaceStore:
         if path.exists():
             path.unlink()
 
+    def append_message(
+        self,
+        session_id: str,
+        role: str,
+        content: str,
+        meta: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        session = self.get_session(session_id)
+        role_value = role.strip().lower()
+        if role_value not in {"user", "assistant", "system"}:
+            raise ValueError("role must be user, assistant, or system")
+        text = content.strip()
+        if not text:
+            raise ValueError("content is required")
+        payload = ChatMessage(
+            id=self._next_id("msg"),
+            session_id=session_id,
+            role=role_value,  # type: ignore[arg-type]
+            content=text,
+            created_at=utc_now_iso(),
+            meta=meta or {},
+        ).to_dict()
+
+        path = self._conversation_path(session["tenant_id"], session_id)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with path.open("a", encoding="utf-8") as handle:
+            handle.write(json.dumps(payload, ensure_ascii=True) + "\n")
+        return payload
+
+    def list_messages(self, session_id: str) -> List[Dict[str, Any]]:
+        session = self.get_session(session_id)
+        path = self._conversation_path(session["tenant_id"], session_id)
+        if not path.exists():
+            return []
+        messages: List[Dict[str, Any]] = []
+        for raw in path.read_text(encoding="utf-8").splitlines():
+            line = raw.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(payload, dict) and payload:
+                messages.append(payload)
+        return messages
+
     def latest_pending_approval(
         self,
         session_id: str,
@@ -1015,7 +1081,10 @@ class FileWorkspaceStore:
         return tenant_id, status
 
     def _safe_relative_path(self, value: str) -> Path:
-        rel = Path(value.strip())
+        raw = value.strip().replace("\\", "/")
+        if raw.startswith("workspace/"):
+            raw = raw[len("workspace/") :]
+        rel = Path(raw)
         if rel.is_absolute() or ".." in rel.parts:
             raise ValueError("Artifact path must be relative within workspace")
         if str(rel).strip() == "":
