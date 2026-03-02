@@ -1,0 +1,22 @@
+# OS
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+
+# Local secrets
+.env
+*.env.local
+amplitude-insights-bot/.env
+
+# Runtime artifacts
+tmp/
+workspace/
+
+# Local scratch
+*.log

@@ -1,0 +1,150 @@
+{
+  "version": "2026-02-21",
+  "chart_set": "activation_v1",
+  "app_id": 639837,
+  "segment_standard": {
+    "property": "userdata_cohort",
+    "operator": "is not",
+    "value": "5cn1caqx",
+    "description": "Exclude tenant employees cohort"
+  },
+  "time_standard": {
+    "range": "Last 4 Weeks",
+    "interval": "Weekly",
+    "comparison": "Previous Period vs",
+    "exclude_current_interval": false
+  },
+  "entries": [
+    {
+      "metric_key": "core_composite_activation_14d",
+      "chart_name": "Activation KPI: Signup Completed -> Any High-Value Action",
+      "chart_type": "funnel",
+      "app_id": 639837,
+      "segment_definition": "userdata_cohort is not 5cn1caqx",
+      "time_settings": "Last 4 Weeks / Weekly / Previous Period vs",
+      "event_steps_or_series": [
+        "Signup: Completed",
+        "ce:Activation Proxy"
+      ],
+      "metric_mode": "conversion",
+      "rationale": "Primary KPI for activation target tracking (40-50%), implemented with a custom OR event proxy.",
+      "chart_id": "0pl4jd50",
+      "status": "validated"
+    },
+    {
+      "metric_key": "core_signup_to_any_dent_created",
+      "chart_name": "Signup Completed -> Any DENT Created (Task/Event/Note/Document)",
+      "chart_type": "funnel",
+      "app_id": 639837,
+      "segment_definition": "userdata_cohort is not 5cn1caqx",
+      "time_settings": "Last 4 Weeks / Weekly / Previous Period vs",
+      "event_steps_or_series": [
+        "Signup: Completed",
+        "ce:Any DENT Created"
+      ],
+      "metric_mode": "conversion",
+      "rationale": "Tracks activation via DENT creation behavior, implemented with a custom OR event proxy.",
+      "chart_id": "i3i58uut",
+      "status": "validated"
+    },
+    {
+      "metric_key": "core_signup_to_calendar_connect_completed",
+      "chart_name": "Signup Completed -> Calendar Connect: Completed",
+      "chart_type": "funnel",
+      "app_id": 639837,
+      "segment_definition": "userdata_cohort is not 5cn1caqx",
+      "time_settings": "Last 4 Weeks / Weekly / Previous Period vs",
+      "event_steps_or_series": [
+        "Signup: Completed",
+        "Calendar Connect: Completed"
+      ],
+      "metric_mode": "conversion",
+      "rationale": "Measures calendar setup activation path completion.",
+      "chart_id": "ectuc1bm",
+      "status": "validated"
+    },
+    {
+      "metric_key": "core_signup_to_appliance_added",
+      "chart_name": "Signup Completed -> House: Appliance Added",
+      "chart_type": "funnel",
+      "app_id": 639837,
+      "segment_definition": "userdata_cohort is not 5cn1caqx",
+      "time_settings": "Last 4 Weeks / Weekly / Previous Period vs",
+      "event_steps_or_series": [
+        "Signup: Completed",
+        "House: Appliance Added"
+      ],
+      "metric_mode": "conversion",
+      "rationale": "Tracks household setup depth during activation period.",
+      "chart_id": "w2p98xci",
+      "status": "validated"
+    },
+    {
+      "metric_key": "core_signup_to_hive_member_invited",
+      "chart_name": "Signup Completed -> Hive: Member Invited",
+      "chart_type": "funnel",
+      "app_id": 639837,
+      "segment_definition": "userdata_cohort is not 5cn1caqx",
+      "time_settings": "Last 4 Weeks / Weekly / Previous Period vs",
+      "event_steps_or_series": [
+        "Signup: Completed",
+        "Hive: Member Invited"
+      ],
+      "metric_mode": "conversion",
+      "rationale": "Tracks collaboration onboarding as an activation path.",
+      "chart_id": "p8g2bhzg",
+      "status": "validated"
+    },
+    {
+      "metric_key": "supp_dent_action_mix_breakdown",
+      "chart_name": "DENT Action Mix from Signup (Task vs Event vs Note vs Document)",
+      "chart_type": "eventsSegmentation",
+      "app_id": 639837,
+      "segment_definition": "userdata_cohort is not 5cn1caqx",
+      "time_settings": "Last 4 Weeks / Weekly / Previous Period vs",
+      "event_steps_or_series": [
+        "Signup: Completed",
+        "Task: Created",
+        "Event: Created",
+        "Note: Created",
+        "Document: Uploaded"
+      ],
+      "metric_mode": "uniques",
+      "rationale": "Diagnoses DENT mix and supports derived conversion-from-signup calculations.",
+      "chart_id": "9wo48n2l",
+      "status": "validated"
+    },
+    {
+      "metric_key": "supp_calendar_started_to_completed",
+      "chart_name": "Calendar Connection Quality: Started -> Completed",
+      "chart_type": "funnel",
+      "app_id": 639837,
+      "segment_definition": "userdata_cohort is not 5cn1caqx",
+      "time_settings": "Last 4 Weeks / Weekly / Previous Period vs",
+      "event_steps_or_series": [
+        "Calendar Connect: Started",
+        "Calendar Connect: Completed"
+      ],
+      "metric_mode": "conversion",
+      "rationale": "Identifies friction between calendar connection intent and completion.",
+      "chart_id": "i2cqwsyx",
+      "status": "validated"
+    },
+    {
+      "metric_key": "supp_14d_repeat_after_activation_proxy",
+      "chart_name": "Repeat Behavior After Activation Proxy",
+      "chart_type": "retention",
+      "app_id": 639837,
+      "segment_definition": "userdata_cohort is not 5cn1caqx",
+      "time_settings": "Last 4 Weeks / Weekly / Previous Period vs",
+      "event_steps_or_series": [
+        "Start event: ce:Activation Proxy",
+        "Return event: ce:Activation Proxy (repeat)"
+      ],
+      "metric_mode": "retention",
+      "rationale": "Preferred modeling decision implemented: custom activation-proxy start event with repeat-on-proxy retention.",
+      "chart_id": "0zug54x7",
+      "status": "validated"
+    }
+  ]
+}

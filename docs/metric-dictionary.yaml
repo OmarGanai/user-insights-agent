@@ -1,0 +1,176 @@
+{
+  "version": "2026-02-21",
+  "canonical_mapping": "metric_key -> chart_id -> chart_name -> chart_type -> intent",
+  "app_id": 639837,
+  "chart_type_standard": [
+    "funnel",
+    "retention",
+    "events_segmentation"
+  ],
+  "term_glossary": {
+    "DENT": "Domain-specific action family for high-value creation actions.",
+    "Hive": "Shared collaboration space feature.",
+    "Life Tab": "Product surface where day-to-day personal activity happens."
+  },
+  "segment_standard": {
+    "property": "userdata_cohort",
+    "operator": "is not",
+    "value": "5cn1caqx",
+    "description": "Exclude tenant employees cohort"
+  },
+  "time_standard": {
+    "range": "Last 4 Weeks",
+    "interval": "Weekly",
+    "comparison": "Previous Period vs",
+    "exclude_current_interval": false,
+    "implementation_note": "With exclude_current_interval=false, query payloads commonly include 5 weekly buckets and mark the latest bucket incomplete."
+  },
+  "chart_sets": {
+    "legacy": {
+      "description": "Rollback-safe chart set based on currently available chart IDs.",
+      "core": [
+        {
+          "metric_key": "legacy_signup_to_life_tab_viewed",
+          "chart_id": "oys29da5",
+          "chart_name": "Signup Completed -> Life Tab Viewed",
+          "intent": "Legacy top-of-funnel engagement proxy.",
+          "chart_type": "funnel",
+          "status": "validated"
+        },
+        {
+          "metric_key": "legacy_signup_to_task_created",
+          "chart_id": "rviqohkp",
+          "chart_name": "Signup Completed -> Task Created",
+          "intent": "Legacy activation proxy through task creation.",
+          "chart_type": "funnel",
+          "status": "validated"
+        },
+        {
+          "metric_key": "legacy_signup_to_event_created",
+          "chart_id": "hc4183lh",
+          "chart_name": "Signup Completed -> Event Created",
+          "intent": "Legacy activation proxy through event creation.",
+          "chart_type": "funnel",
+          "status": "validated"
+        },
+        {
+          "metric_key": "legacy_signup_to_note_created",
+          "chart_id": "p9fsuwzc",
+          "chart_name": "Signup Completed -> Note Created",
+          "intent": "Legacy activation proxy through note creation.",
+          "chart_type": "funnel",
+          "status": "validated"
+        },
+        {
+          "metric_key": "legacy_signup_to_appliance_added",
+          "chart_id": "w2p98xci",
+          "chart_name": "Signup Completed -> House: Appliance Added",
+          "intent": "Legacy household setup completion proxy.",
+          "chart_type": "funnel",
+          "status": "validated"
+        }
+      ],
+      "supplemental": [
+        {
+          "metric_key": "legacy_signup_to_life_tab_member_tapped",
+          "chart_id": "gfhad295",
+          "chart_name": "Signup Completed -> Life Tab Member Tapped",
+          "intent": "Legacy diagnostic for collaboration intent.",
+          "chart_type": "funnel",
+          "status": "validated"
+        },
+        {
+          "metric_key": "legacy_hive_member_invited_retention",
+          "chart_id": "sb8w2oof",
+          "chart_name": "Hive Member Invited Retention",
+          "intent": "Legacy repeat invite behavior diagnostic.",
+          "chart_type": "retention",
+          "status": "validated"
+        },
+        {
+          "metric_key": "legacy_signup_to_task_created_diagnostic",
+          "chart_id": "rviqohkp",
+          "chart_name": "Signup Completed -> Task Created (Diagnostic)",
+          "intent": "Duplicate diagnostic view for appendix stability in legacy mode.",
+          "chart_type": "funnel",
+          "status": "validated",
+          "alias_of_metric_key": "legacy_signup_to_task_created",
+          "chart_reuse_note": "Intent-level alias that reuses the same underlying chart ID."
+        }
+      ]
+    },
+    "activation_v1": {
+      "description": "Target activation-first set. Keep disabled until all chart IDs are created and validated.",
+      "core": [
+        {
+          "metric_key": "core_composite_activation_14d",
+          "chart_id": "0pl4jd50",
+          "chart_name": "Activation KPI: Signup Completed -> Any High-Value Action",
+          "intent": "Primary activation KPI against 40-50% weekly target.",
+          "chart_type": "funnel",
+          "status": "validated"
+        },
+        {
+          "metric_key": "core_signup_to_any_dent_created",
+          "chart_id": "i3i58uut",
+          "chart_name": "Signup Completed -> Any DENT Created",
+          "intent": "Creation behavior coverage diagnostic for activation.",
+          "chart_type": "funnel",
+          "status": "validated"
+        },
+        {
+          "metric_key": "core_signup_to_calendar_connect_completed",
+          "chart_id": "ectuc1bm",
+          "chart_name": "Signup Completed -> Calendar Connect: Completed",
+          "intent": "Calendar setup completion path for activation.",
+          "chart_type": "funnel",
+          "status": "validated"
+        },
+        {
+          "metric_key": "core_signup_to_appliance_added",
+          "chart_id": "w2p98xci",
+          "chart_name": "Signup Completed -> House: Appliance Added",
+          "intent": "Household setup activation path.",
+          "chart_type": "funnel",
+          "status": "validated",
+          "alias_of_metric_key": "legacy_signup_to_appliance_added",
+          "chart_reuse_note": "Cross-chart-set reuse of the same chart ID."
+        },
+        {
+          "metric_key": "core_signup_to_hive_member_invited",
+          "chart_id": "p8g2bhzg",
+          "chart_name": "Signup Completed -> Hive: Member Invited",
+          "intent": "Collaboration activation path.",
+          "chart_type": "funnel",
+          "status": "validated"
+        }
+      ],
+      "supplemental": [
+        {
+          "metric_key": "supp_dent_action_mix_breakdown",
+          "chart_id": "9wo48n2l",
+          "chart_name": "DENT Action Mix Breakdown",
+          "intent": "Action-level DENT mix with signup-denominator conversion context.",
+          "chart_type": "events_segmentation",
+          "status": "validated"
+        },
+        {
+          "metric_key": "supp_calendar_started_to_completed",
+          "chart_id": "i2cqwsyx",
+          "chart_name": "Calendar Started -> Completed",
+          "intent": "Calendar connection quality diagnostics.",
+          "chart_type": "funnel",
+          "status": "validated"
+        },
+        {
+          "metric_key": "supp_14d_repeat_after_activation_proxy",
+          "chart_id": "0zug54x7",
+          "chart_name": "Repeat Behavior After Activation Proxy",
+          "intent": "Post-activation repeat behavior signal.",
+          "chart_type": "retention",
+          "status": "validated"
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "feedback_items_count": 5,
+  "feedback_snippets_count": 6,
+  "theme_count": 4,
+  "themes": [
+    {
+      "theme_key": "calendar_connection_friction",
+      "theme_label": "Calendar connection friction",
+      "mention_count": 3,
+      "representative_snippets": [
+        "Calendar sync keeps failing when I connect Google Calendar.",
+        "Please add better calendar error messages.",
+        "Calendar connection is confusing during onboarding."
+      ]
+    },
+    {
+      "theme_key": "bugs_and_reliability",
+      "theme_label": "Bugs and reliability issues",
+      "mention_count": 1,
+      "representative_snippets": [
+        "The app crashes when I open detail view. Reach me at [redacted-email]"
+      ]
+    },
+    {
+      "theme_key": "notifications_reminders",
+      "theme_label": "Notifications/reminders",
+      "mention_count": 1,
+      "representative_snippets": [
+        "I wish notifications were more reliable. Call me [redacted-phone]"
+      ]
+    },
+    {
+      "theme_key": "performance_speed",
+      "theme_label": "Performance and speed",
+      "mention_count": 1,
+      "representative_snippets": [
+        "The app is slow on startup and loading my tasks."
+      ]
+    }
+  ]
+}

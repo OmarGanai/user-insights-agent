@@ -1,0 +1,39 @@
+name: Amplitude Insights Bot
+
+on:
+  schedule:
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  weekly-report:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run weekly report
+        env:
+          AMPLITUDE_API_KEY: ${{ secrets.AMPLITUDE_API_KEY }}
+          AMPLITUDE_SECRET_KEY: ${{ secrets.AMPLITUDE_SECRET_KEY }}
+          AMPLITUDE_BASE_URL: ${{ secrets.AMPLITUDE_BASE_URL }}
+          AMPLITUDE_CHART_IDS: ${{ secrets.AMPLITUDE_CHART_IDS }}
+          TYPEFORM_TOKEN: ${{ secrets.TYPEFORM_TOKEN }}
+          TYPEFORM_FORM_ID: ${{ secrets.TYPEFORM_FORM_ID }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: ${{ secrets.GEMINI_MODEL }}
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_CHANNEL: ${{ secrets.SLACK_CHANNEL }}
+          LOOKBACK_DAYS: ${{ secrets.LOOKBACK_DAYS }}
+        run: python main.py
