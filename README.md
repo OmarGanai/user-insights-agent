@@ -26,7 +26,7 @@ Agent-native runtime components now also exist in:
 ## Setup
 
 ```bash
-cd internal-tools/amplitude-insights-bot
+cd /Users/omarganai/Coding/user-insights-agent
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -37,18 +37,18 @@ Fill in `.env` values.
 
 Chart contract + cutover:
 - `REPORT_CHART_SET=legacy|activation_v1` (default `activation_v1`)
-- Canonical metric mapping: `/Users/omarganai/Coding/amplitude-insights-bot/docs/metric-dictionary.yaml`
+- Canonical metric mapping: `docs/metric-dictionary.yaml`
 - Use `legacy` only as rollback when needed.
 
 PR2 context artifacts:
 - Split context files:
-  - `/Users/omarganai/Coding/amplitude-insights-bot/docs/context/base-app-context.md`
-  - `/Users/omarganai/Coding/amplitude-insights-bot/docs/context/activation-weekly-context.md`
+  - `docs/context/base-app-context.md`
+  - `docs/context/activation-weekly-context.md`
 - iOS release ingestion log:
-  - `/Users/omarganai/Coding/amplitude-insights-bot/docs/ios-releases.md`
+  - `docs/ios-releases.md`
 - Temporal memory contract:
-  - `/Users/omarganai/Coding/amplitude-insights-bot/docs/temporal-memory-contract.md`
-  - Runtime memory file: `/Users/omarganai/Coding/amplitude-insights-bot/tmp/weekly-report-memory.json`
+  - `docs/temporal-memory-contract.md`
+  - Runtime memory file: `tmp/weekly-report-memory.json`
 
 Gemini model behavior:
 - Default model: `gemini-3-flash-preview`
@@ -77,7 +77,7 @@ Dry run now returns Slack preview sections in this order:
 - Key Metrics
 - Insights & Next Steps
 
-Live chart contract verification (direct Amplitude API; runs in full test suite):
+Live chart contract verification (direct Amplitude API; opt-in):
 
 ```bash
 python3 -m unittest tests.test_amplitude_live_chart_contract
@@ -141,7 +141,7 @@ python scripts/public_safety_scan.py --root .
 
 ## GitHub Actions
 
-Workflow file: `.github/workflows/amplitude-insights-bot.yml`
+Workflow file: `.github/workflows/ci.yml`
 
 Add these repository secrets:
 - `AMPLITUDE_API_KEY`

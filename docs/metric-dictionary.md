@@ -1,6 +1,6 @@
 # Metric Dictionary
 
-Canonical source for chart mapping is `/Users/omarganai/Coding/amplitude-insights-bot/docs/metric-dictionary.yaml`.
+Canonical source for chart mapping is `docs/metric-dictionary.yaml`.
 
 ## Global Standards
 

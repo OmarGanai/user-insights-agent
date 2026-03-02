@@ -6,7 +6,7 @@ Use this whenever you want to quickly run the local debug UI.
 
 ```bash
 pkill -f "scripts/debug_pipeline_ui.py" || true
-python3 /Users/omarganai/Coding/amplitude-insights-bot/scripts/debug_pipeline_ui.py --host 127.0.0.1 --port 8787
+python3 scripts/debug_pipeline_ui.py --host 127.0.0.1 --port 8787
 ```
 
 ## Open in Browser
