@@ -24,23 +24,23 @@ Primary business objective:
 - Report contract is now `5 core + 3 supplemental` charts.
 - Activation chart set contract (`activation_v1`) is now fully created + validated in `tenant-prod` (`appId=639837`).
 - Chart contract artifacts are live:
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/metric-dictionary.yaml`
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/metric-dictionary.md`
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/chart-build-sheet.yaml`
+- `docs/metric-dictionary.yaml`
+- `docs/metric-dictionary.md`
+- `docs/chart-build-sheet.yaml`
 - Config cutover + rollback switch is live: `REPORT_CHART_SET=legacy|activation_v1` (default is `activation_v1`).
 - Slack output order/gates are implemented and tested:
 - `Executive Summary` -> `Key Metrics` -> `Insights & Next Steps`.
 - PR2 artifacts now live:
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/context/base-app-context.md`
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/context/activation-weekly-context.md`
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/ios-releases.md`
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/temporal-memory-contract.md`
-- `/Users/omarganai/Coding/amplitude-insights-bot/services/report_context.py`
-- `/Users/omarganai/Coding/amplitude-insights-bot/services/temporal_memory.py`
+- `docs/context/base-app-context.md`
+- `docs/context/activation-weekly-context.md`
+- `docs/ios-releases.md`
+- `docs/temporal-memory-contract.md`
+- `services/report_context.py`
+- `services/temporal_memory.py`
 - PR3 artifacts now live:
-- `/Users/omarganai/Coding/amplitude-insights-bot/services/feedback_themes.py`
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/report-style-contract.md`
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/amplitude-chart-parser-reliability-notes.md`
+- `services/feedback_themes.py`
+- `docs/report-style-contract.md`
+- `docs/amplitude-chart-parser-reliability-notes.md`
 - `activation_v1` validated chart IDs:
 - `core_composite_activation_14d`: `0pl4jd50`
 - `core_signup_to_any_dent_created`: `i3i58uut`
@@ -207,35 +207,35 @@ Formatting rules:
 
 Requirement:
 - Add a maintained release log at:
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/ios-releases.md`
+- `docs/ios-releases.md`
 - On each pipeline run:
 - Query Apple lookup API for app id `6480279827` (`https://itunes.apple.com/lookup?id=6480279827`).
 - Prepend newest-first.
 - De-duplicate by exact `version + build`.
 
 Implementation update:
-- Implemented in `/Users/omarganai/Coding/amplitude-insights-bot/services/report_context.py`.
+- Implemented in `services/report_context.py`.
 - Release ingestion is non-blocking for report publishing.
 - Fallback dedupe key is documented and implemented as `version + release_date` when build is unavailable.
 
 ## 7.2 App Context Refactor
 
 Split broad context into:
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/context/base-app-context.md`
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/context/activation-weekly-context.md`
+- `docs/context/base-app-context.md`
+- `docs/context/activation-weekly-context.md`
 
 Intent:
 - Keep static context stable.
 - Keep weekly activation context lightweight and frequently updated.
 
 Implementation update:
-- Context loader now prefers split files and falls back to legacy `/Users/omarganai/Coding/amplitude-insights-bot/app-context.md` when needed.
+- Context loader now prefers split files and falls back to legacy `app-context.md` when needed.
 
 ## 7.3 Metric Dictionary (Bot Source of Truth)
 
 Create and maintain:
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/metric-dictionary.yaml` (machine source)
-- `/Users/omarganai/Coding/amplitude-insights-bot/docs/metric-dictionary.md` (human-readable mirror)
+- `docs/metric-dictionary.yaml` (machine source)
+- `docs/metric-dictionary.md` (human-readable mirror)
 
 ## 7.4 Typeform Feedback Coverage
 
@@ -259,8 +259,8 @@ Add prior-report memory to support:
 - What action status should be revisited.
 
 Implementation update:
-- Contract and schema documented at `/Users/omarganai/Coding/amplitude-insights-bot/docs/temporal-memory-contract.md`.
-- Runtime memory file path is `/Users/omarganai/Coding/amplitude-insights-bot/tmp/weekly-report-memory.json`.
+- Contract and schema documented at `docs/temporal-memory-contract.md`.
+- Runtime memory file path is `tmp/weekly-report-memory.json`.
 - Memory writes are idempotent and rotate `latest_report` to `previous_report` on changes.
 
 ## 8) Executed PR Sequencing Plan (3 Sequential PRs)
@@ -290,7 +290,7 @@ Acceptance criteria:
 Validation evidence:
 - `python3 -m unittest discover -s tests -p 'test_*.py'` passed.
 - Golden fixture maintained at:
-- `/Users/omarganai/Coding/amplitude-insights-bot/tests/fixtures/pr1_legacy_dry_run_sections.json`
+- `tests/fixtures/pr1_legacy_dry_run_sections.json`
 
 ## PR 2: iOS Releases + Focused Context + Temporal Memory
 
@@ -316,8 +316,8 @@ Acceptance criteria:
 Validation evidence:
 - `python3 -m unittest discover -s tests -p 'test_*.py'` passed (`Ran 32 tests ... OK`).
 - New PR2 tests:
-- `/Users/omarganai/Coding/amplitude-insights-bot/tests/test_report_context_pr2.py`
-- `/Users/omarganai/Coding/amplitude-insights-bot/tests/test_temporal_memory_pr2.py`
+- `tests/test_report_context_pr2.py`
+- `tests/test_temporal_memory_pr2.py`
 
 ## PR 3: Feedback Theming + Reliability Layer + Final Prompt Tuning
 
@@ -346,9 +346,9 @@ Acceptance criteria:
 Validation evidence:
 - `python3 -m unittest discover -s tests -p 'test_*.py'` passed (`Ran 37 tests ... OK`).
 - New PR3 tests/fixtures:
-- `/Users/omarganai/Coding/amplitude-insights-bot/tests/test_feedback_themes_pr3.py`
-- `/Users/omarganai/Coding/amplitude-insights-bot/tests/test_orchestrator_pr3.py`
-- `/Users/omarganai/Coding/amplitude-insights-bot/tests/fixtures/pr3_feedback_theme_summary.json`
+- `tests/test_feedback_themes_pr3.py`
+- `tests/test_orchestrator_pr3.py`
+- `tests/fixtures/pr3_feedback_theme_summary.json`
 
 ## 9) Risks and Guardrails
 

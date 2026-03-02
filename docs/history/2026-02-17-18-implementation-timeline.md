@@ -2,7 +2,7 @@
 
 ## Scope
 
-This document reconstructs the end-to-end implementation history for the recent local-testing and reporting-quality workstream in `private-org/amplitude-insights-bot`, combining:
+This document reconstructs the end-to-end implementation history for the recent local-testing and reporting-quality workstream in `<redacted-org>/amplitude-insights-bot`, combining:
 
 - Conversation/execution trail (Cursor transcript and terminal runs)
 - Git commit history and changed files
@@ -36,63 +36,63 @@ It is intentionally historical (what happened, in order), not prescriptive.
 
 ## Commit Timeline (Chronological)
 
-> Repo: https://github.com/private-org/amplitude-insights-bot
+> Repo: https://github.com/<redacted-org>/amplitude-insights-bot
 
 ### Foundation and Core Integrations
 
 - `1f301dd` (2026-02-17 17:43:18 -0500)  
   **Initial scaffold for Amplitude Insights Bot**  
   Added project structure, clients, config, orchestrator, analyzer, workflow, env template.  
-  https://github.com/private-org/amplitude-insights-bot/commit/1f301dd
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/1f301dd
 
 - `a06d5c4` (2026-02-17 17:46:24 -0500)  
   **Switch insights analysis from OpenAI to Gemini**  
   Migrated analysis provider and related config/docs/workflow wiring.  
-  https://github.com/private-org/amplitude-insights-bot/commit/a06d5c4
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/a06d5c4
 
 ### Repo Constraints and External Data Stability
 
 - `33113df` (2026-02-17 19:00:07 -0500)  
   **Restrict bot to private-org org defaults**  
   Hardened owner defaults and workflow/env assumptions.  
-  https://github.com/private-org/amplitude-insights-bot/commit/33113df
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/33113df
 
 - `889c7fa` (2026-02-17 19:15:18 -0500)  
   **Grant GitHub token permissions for PR context**  
   Workflow token permission update.  
-  https://github.com/private-org/amplitude-insights-bot/commit/889c7fa
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/889c7fa
 
 - `716bacd` (2026-02-17 19:16:48 -0500)  
   **Make Typeform feedback fetch non-blocking**  
-  https://github.com/private-org/amplitude-insights-bot/commit/716bacd
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/716bacd
 
 - `1c8807f` (2026-02-17 19:18:06 -0500)  
   **Harden Typeform timestamp handling and fallback**  
-  https://github.com/private-org/amplitude-insights-bot/commit/1c8807f
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/1c8807f
 
 - `2e2a658` (2026-02-17 19:20:41 -0500)  
   **Align Typeform client with responses API docs**  
-  https://github.com/private-org/amplitude-insights-bot/commit/2e2a658
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/2e2a658
 
 - `17689a2` (2026-02-17 19:23:17 -0500)  
   **Add Gemini rate-limit retries and model fallback**  
-  https://github.com/private-org/amplitude-insights-bot/commit/17689a2
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/17689a2
 
 - `7014964` (2026-02-17 19:28:13 -0500)  
   **Update Gemini defaults to supported 3.x models**  
-  https://github.com/private-org/amplitude-insights-bot/commit/7014964
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/7014964
 
 - `f690e56` (2026-02-17 19:40:33 -0500)  
   **Sync latest internal tool file updates**  
   README / env sync.  
-  https://github.com/private-org/amplitude-insights-bot/commit/f690e56
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/f690e56
 
 ### Local Testing and Pipeline Debugging Flow
 
 - `c46ea7b` (2026-02-17 20:12:18 -0500)  
   **Add skip_github option to run_weekly_report for local testing**  
   Added skip path and local debug pipeline/test updates.  
-  https://github.com/private-org/amplitude-insights-bot/commit/c46ea7b
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/c46ea7b
 
 ### Accuracy and Readability Iteration Bundle
 
@@ -105,7 +105,7 @@ It is intentionally historical (what happened, in order), not prescriptive.
   - Orchestrator/local-debug chart-title+link wiring
   - New tests (`tests/test_amplitude_summary.py`, `tests/test_analyzer.py`)
   - `app-context.md` inclusion
-  https://github.com/private-org/amplitude-insights-bot/commit/17e411a
+  https://github.com/<redacted-org>/amplitude-insights-bot/commit/17e411a
 
 ---
 
@@ -140,7 +140,7 @@ It is intentionally historical (what happened, in order), not prescriptive.
 
 ### Observed Failures
 
-- Stage-2 GitHub fetch returned `404` when targeting `private-org/amplitude-insights-bot`.
+- Stage-2 GitHub fetch returned `404` when targeting `<redacted-org>/amplitude-insights-bot`.
 - Then returned `401 Bad credentials` for desired repos pending token validity/approval.
 
 ### Execution

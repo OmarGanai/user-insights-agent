@@ -13,7 +13,7 @@
 - [x] Update this plan with completed checkboxes and residual follow-up scope.
 
 ### Residual Follow-up Scope (Next Iteration)
-- [ ] Finalize repo-boundary cutover (promote root as git worktree and retire embedded `amplitude-insights-bot/.git`).
+- [ ] Finalize repo-boundary cutover (retain root as sole active repo and retire or archive legacy nested `amplitude-insights-bot/` assets).
 - [ ] Wire native Google ADK runtime objects (current implementation includes an ADK adapter and local loop fallback).
 - [ ] Build Agent Console UI parity against new `/v1/*` runtime APIs.
 - [ ] Add capability refresh UX and approval inbox UX in the console.
@@ -24,14 +24,14 @@
 Rebuild the current pipeline into a true agent system, implemented on Google ADK (Python), that is public-safe by default (no tenant data in code/history/docs), while supporting private tenant overlays (including tenant) through runtime config and secrets.
 
 ## Repository Baseline and Cutover Constraints (Local Snapshot: 2026-03-01)
-1. Active implementation files are in repository root (`clients/`, `services/`, `scripts/`, `tests/`, `docs/`), while root is currently not a git work tree.
-2. Embedded legacy git metadata exists at `amplitude-insights-bot/.git` and still references `https://github.com/private-org/amplitude-insights-bot/`.
-3. Sensitive identifier baseline in tracked files (excluding `tmp/**` and embedded `.git/**`): 93 matches for `tenant|tenant-prod|private-org`.
+1. Active implementation files are in repository root (`clients/`, `services/`, `scripts/`, `tests/`, `docs/`) and root is the active git worktree.
+2. Legacy nested folder `amplitude-insights-bot/` remains with historical workflow/env artifacts; it should be treated as non-canonical.
+3. Historical sensitive-identifier baseline was high before sanitization; ongoing public-safety scans should remain mandatory.
 4. Secret-bearing local env file is present at `amplitude-insights-bot/.env` with multiple populated values; this must remain untracked.
-5. Current test baseline: 57 tests discovered; 1 live-contract test requires credentials; 1 deterministic test currently fails.
+5. Live Amplitude contract test requires credentials and should remain opt-in, while deterministic tests stay default.
 
 ## Public-Safe Cutover Checklist (Specific to This Copy)
-1. Collapse to one repo boundary at current root and remove embedded `amplitude-insights-bot/.git` from project scope.
+1. Keep one active repo boundary at current root and retire or archive legacy nested `amplitude-insights-bot/` assets from day-to-day workflow.
 2. Quarantine or rewrite high-risk content before public release:
    `docs/history/*`, `docs/legacy-product-analytics.md`, `docs/context/*`, `docs/ios-release-notes.yaml`, sensitive fixtures under `tests/fixtures/*`.
 3. Replace tenant-specific literals in code/tests/docs (`tenant*`, Amplitude app links/IDs, tenant channel names) with tenant-agnostic placeholders.
@@ -391,29 +391,30 @@ All tool contracts are implemented as ADK tools (plus MCP-compatible integration
 4. Recency baseline is fresh: current tree traces to commit `452473e` (`2026-03-01`).
 
 ### Issue Conventions
-1. No root-level `.github/ISSUE_TEMPLATE/` directory exists in this snapshot.
-2. No root-level pull request template is present (`.github/pull_request_template.md` absent).
-3. GitHub label taxonomy and live issue formatting cannot be inferred from local files alone.
-4. Practical implication: issue/PR conventions are currently implicit (ad hoc) rather than codified in-repo.
+1. Root-level issue templates now exist under `.github/ISSUE_TEMPLATE/` (`bug_report.yml`, `feature_request.yml`).
+2. Root-level PR template now exists at `.github/PULL_REQUEST_TEMPLATE.md`.
+3. Label taxonomy remains minimal (`bug`, `enhancement` defaults in templates) and can be expanded later.
+4. Practical implication: basic issue/PR conventions are now codified in-repo.
 
 ### Documentation Insights
 1. Primary planning authority for agent-native cutover is this file (`agent-native-rebuild.md`) plus runtime contracts in `docs/*`.
-2. Several docs still reference legacy absolute paths under `/Users/omarganai/Coding/amplitude-insights-bot/...`:
+2. Key operator-facing docs have been normalized to repo-relative paths:
    - `README.md`
    - `docs/product-analyst-spec.md`
    - `docs/pipeline-debug-studio-quickstart.md`
    - `docs/metric-dictionary.md`
-3. README references `.github/workflows/amplitude-insights-bot.yml`, but no root `.github/` exists; this is currently inconsistent with repository layout.
+3. README workflow reference is aligned with root CI (`.github/workflows/ci.yml`).
 4. Testing norms are explicit and unittest-based (`python3 -m unittest ...` in `README.md` and `docs/product-analyst-spec.md`).
 5. Public-safety policy is implemented and executable via `scripts/public_safety_scan.py`; local run currently passes.
 
 ### Templates Found
 1. Root template inventory:
-   - issue templates: none found
-   - PR template: none found
+   - issue templates: `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/feature_request.yml`
+   - PR template: `.github/PULL_REQUEST_TEMPLATE.md`
    - RFC templates: none found
-2. Legacy nested workflow template exists at `amplitude-insights-bot/.github/workflows/amplitude-insights-bot.yml`.
-3. Legacy nested directory still contains `.env` and `.env.example` and should remain untracked / out of public-safe release scope.
+2. Root CI workflow exists at `.github/workflows/ci.yml` (deterministic tests + public-safety scan).
+3. Legacy nested workflow template still exists at `amplitude-insights-bot/.github/workflows/amplitude-insights-bot.yml`.
+4. Legacy nested directory still contains `.env` and `.env.example` and should remain untracked / out of public-safe release scope.
 
 ### Implementation Patterns
 1. Python typing-first style across runtime and services (`typing`, dataclasses, explicit return payloads).
@@ -426,12 +427,6 @@ All tool contracts are implemented as ADK tools (plus MCP-compatible integration
 
 ### Recommendations
 1. Convert "repo-boundary cutover" residual task from removing embedded `.git` (already absent) to removing or quarantining legacy nested `amplitude-insights-bot/` assets that still create path/workflow ambiguity.
-2. Add root `.github/` ownership files:
-   - workflow for deterministic unit + public-safety scans
-   - issue template(s) and PR template to codify contribution/reporting format.
-3. Normalize all absolute legacy path references to root-relative paths before public release.
-4. Add a `CONTRIBUTING.md` with:
-   - canonical test command(s)
-   - public-safety checks
-   - approval-gated side-effect policy for Slack posting.
-5. Keep `scripts/public_safety_scan.py` as a required CI gate and pair it with tracked-artifact checks for `tmp/` and `workspace/`.
+2. Continue normalizing or redacting legacy private-org references in historical docs where public distribution requires it.
+3. Keep `scripts/public_safety_scan.py` as a required CI gate and pair it with tracked-artifact checks for `tmp/` and `workspace/`.
+4. Decide whether `amplitude-insights-bot/` should be archived outside this repo or retained as historical context.
