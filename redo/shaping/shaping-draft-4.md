@@ -17,8 +17,11 @@ selected_shape: B
 ### Problem
 Product teams lose momentum because metrics, release notes, and feedback are fragmented across tools, so synthesis and reporting are slow and hard to trust.
 
-### Outcome
+### Project Outcome
 Ship a public open-source demo in weekend scope that turns fragmented product signals into an actionable decision brief with human review before Slack publish.
+
+## Core User JTBD
+Given new product data across tools, give me an actionable weekly report I can trust, edit quickly, and post to Slack.
 
 ### Primary User
 PM / Product Ops.
