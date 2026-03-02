@@ -1,0 +1,52 @@
+name: Feature request
+description: Propose an enhancement to runtime, APIs, prompts, or tooling.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What problem should this feature solve?
+      placeholder: Current limitation and who is impacted.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the preferred implementation shape.
+      placeholder: APIs/tools/files likely affected.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other options and why they are weaker.
+      placeholder: Trade-offs between alternatives.
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Specific, testable outcomes.
+      placeholder: |
+        - [ ] Behavior A
+        - [ ] Test B
+        - [ ] Docs C
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: I confirmed this request does not include secrets or private tenant data.
+          required: true

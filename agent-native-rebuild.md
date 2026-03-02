@@ -17,7 +17,7 @@
 - [ ] Wire native Google ADK runtime objects (current implementation includes an ADK adapter and local loop fallback).
 - [ ] Build Agent Console UI parity against new `/v1/*` runtime APIs.
 - [ ] Add capability refresh UX and approval inbox UX in the console.
-- [ ] Add CI workflow wiring for `scripts/public_safety_scan.py` and deterministic test gate.
+- [x] Add CI workflow wiring for `scripts/public_safety_scan.py` and deterministic test gate.
 - [ ] Complete prompt-profile canary rollout plumbing and evaluation harness.
 
 ## Summary
@@ -375,3 +375,63 @@ All tool contracts are implemented as ADK tools (plus MCP-compatible integration
 6. Tenant enablement is private overlay only, never public defaults.
 7. `main.py` compatibility adapter is retained in V1 to preserve migration continuity.
 8. Private tenant model access uses Gemini credentials via tenant-scoped secret configuration.
+
+## Repository Research Summary (Local Snapshot: 2026-03-01)
+
+### Architecture & Structure
+1. Root repository is an active git worktree (`origin=https://github.com/OmarGanai/user-insights-agent.git`), with a mixed architecture:
+   - legacy pipeline runtime (`main.py`, `services/orchestrator.py`, `clients/*`)
+   - agent-native runtime slice (`agent_runtime/*`, `scripts/agent_runtime_api.py`)
+2. Repository layout is domain-grouped and stable:
+   - runtime/service code: `agent_runtime/`, `services/`, `clients/`, `scripts/`
+   - prompts/contracts/docs: `prompts/`, `docs/`
+   - verification: `tests/`
+   - generated data roots: `workspace/`, `tmp/`
+3. Dependency surface remains intentionally small (`requirements.txt`): `python-dotenv`, `requests`, `PyYAML`.
+4. Recency baseline is fresh: current tree traces to commit `452473e` (`2026-03-01`).
+
+### Issue Conventions
+1. No root-level `.github/ISSUE_TEMPLATE/` directory exists in this snapshot.
+2. No root-level pull request template is present (`.github/pull_request_template.md` absent).
+3. GitHub label taxonomy and live issue formatting cannot be inferred from local files alone.
+4. Practical implication: issue/PR conventions are currently implicit (ad hoc) rather than codified in-repo.
+
+### Documentation Insights
+1. Primary planning authority for agent-native cutover is this file (`agent-native-rebuild.md`) plus runtime contracts in `docs/*`.
+2. Several docs still reference legacy absolute paths under `/Users/omarganai/Coding/amplitude-insights-bot/...`:
+   - `README.md`
+   - `docs/product-analyst-spec.md`
+   - `docs/pipeline-debug-studio-quickstart.md`
+   - `docs/metric-dictionary.md`
+3. README references `.github/workflows/amplitude-insights-bot.yml`, but no root `.github/` exists; this is currently inconsistent with repository layout.
+4. Testing norms are explicit and unittest-based (`python3 -m unittest ...` in `README.md` and `docs/product-analyst-spec.md`).
+5. Public-safety policy is implemented and executable via `scripts/public_safety_scan.py`; local run currently passes.
+
+### Templates Found
+1. Root template inventory:
+   - issue templates: none found
+   - PR template: none found
+   - RFC templates: none found
+2. Legacy nested workflow template exists at `amplitude-insights-bot/.github/workflows/amplitude-insights-bot.yml`.
+3. Legacy nested directory still contains `.env` and `.env.example` and should remain untracked / out of public-safe release scope.
+
+### Implementation Patterns
+1. Python typing-first style across runtime and services (`typing`, dataclasses, explicit return payloads).
+2. Tool dispatch pattern is centralized in `agent_runtime/tools.py` via string-to-callable registry with structured `ToolResult`.
+3. Session orchestration follows explicit state transitions and completion gate (`complete_task`) in `agent_runtime/runtime.py`.
+4. Tenant isolation is filesystem-enforced in `agent_runtime/store.py` (`workspace/tenants/{tenant_id}/...`).
+5. Discovery design enforces read-only constraints + TTL caching + redaction metadata in `agent_runtime/discovery.py`.
+6. Test suite convention uses `unittest.TestCase` with deterministic fixtures and targeted patching/mocking.
+7. `ast-grep` is not available in this local environment; pattern analysis used `rg` fallback.
+
+### Recommendations
+1. Convert "repo-boundary cutover" residual task from removing embedded `.git` (already absent) to removing or quarantining legacy nested `amplitude-insights-bot/` assets that still create path/workflow ambiguity.
+2. Add root `.github/` ownership files:
+   - workflow for deterministic unit + public-safety scans
+   - issue template(s) and PR template to codify contribution/reporting format.
+3. Normalize all absolute legacy path references to root-relative paths before public release.
+4. Add a `CONTRIBUTING.md` with:
+   - canonical test command(s)
+   - public-safety checks
+   - approval-gated side-effect policy for Slack posting.
+5. Keep `scripts/public_safety_scan.py` as a required CI gate and pair it with tracked-artifact checks for `tmp/` and `workspace/`.

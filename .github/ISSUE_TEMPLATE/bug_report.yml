@@ -1,0 +1,52 @@
+name: Bug report
+description: Report a reproducible defect in runtime, tooling, or docs.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Clear description of the bug and expected behavior.
+      placeholder: What happened, and what should have happened?
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Minimal steps someone else can follow.
+      placeholder: |
+        1. Run ...
+        2. Open ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: Runtime and OS details.
+      placeholder: Python version, OS, relevant env vars (non-secret only)
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Evidence (logs/screenshots/artifacts)
+      description: Include stack traces or artifact paths. Do not include secrets or PII.
+      placeholder: Paste logs or reference files under tmp/workspace if relevant.
+    validations:
+      required: false
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: I confirmed this report does not contain secrets, tokens, or private tenant identifiers.
+          required: true
