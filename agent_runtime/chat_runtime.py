@@ -76,6 +76,18 @@ class ChatRuntime:
             )
 
         plan = self.validator.validate(plan=plan, session=session, preview_only=True)
+        if planner_backend == "gemini" and not _has_actionable_calls(plan.tool_calls):
+            fallback_used = True
+            planner_backend = "deterministic"
+            validation_warnings.append(
+                "Gemini planner plan was rejected by validation; used deterministic fallback."
+            )
+            fallback_plan = self.deterministic_planner.plan(
+                session=session,
+                message=text,
+                _context_snapshot=context_snapshot,
+            )
+            plan = self.validator.validate(plan=fallback_plan, session=session, preview_only=True)
         if validation_warnings:
             plan.validation_warnings.extend(validation_warnings)
 
@@ -197,3 +209,13 @@ def _assistant_response_text(
         lines.append("Planner notes:")
         lines.extend([f"- {note}" for note in validation_warnings[:5]])
     return "\n".join(lines)
+
+
+def _has_actionable_calls(tool_calls: List[Dict[str, Any]]) -> bool:
+    for call in tool_calls:
+        if not isinstance(call, dict):
+            continue
+        tool_name = str(call.get("tool") or "").strip()
+        if tool_name and tool_name != "complete_task":
+            return True
+    return False

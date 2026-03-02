@@ -4,6 +4,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from agent_runtime import AgentRuntime
+from agent_runtime.models import ToolPlan
 from agent_runtime.store import FileWorkspaceStore
 
 
@@ -23,6 +24,28 @@ class ChatRuntimeTest(unittest.TestCase):
 
         self.assertEqual(payload["planner"]["backend"], "deterministic")
         self.assertTrue(payload["planner"]["fallback_used"])
+
+    def test_planner_fallback_when_gemini_plan_is_invalid_after_validation(self) -> None:
+        runtime = self._runtime()
+        session = runtime.create_session(tenant_id="tenant-chat", objective="Generate digest")
+
+        invalid_plan = ToolPlan(
+            plan_id="plan_invalid",
+            tool_calls=[
+                {"tool": "amplitude_get_chart_data", "args": {"chart_id": "abc123"}},
+            ],
+            backend="gemini",
+            fallback_used=False,
+            raw_model_output="{}",
+            validation_warnings=[],
+        )
+
+        with patch.object(runtime.chat.gemini_planner, "plan", return_value=invalid_plan):
+            payload = runtime.chat_turn(session_id=session["id"], message="Generate weekly digest")
+
+        self.assertEqual(payload["planner"]["backend"], "deterministic")
+        self.assertTrue(payload["planner"]["fallback_used"])
+        self.assertIn(payload["session"]["status"], {"completed", "waiting_approval"})
 
     def test_chat_turn_weekly_digest_completes_without_manual_tool_calls(self) -> None:
         runtime = self._runtime()

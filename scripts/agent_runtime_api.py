@@ -10,10 +10,14 @@ from pathlib import Path
 from typing import Any, Dict
 from urllib.parse import unquote
 
+from dotenv import load_dotenv
+
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
+
+load_dotenv(REPO_ROOT / ".env")
 
 from agent_runtime import AgentRuntime
 
