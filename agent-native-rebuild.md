@@ -14,7 +14,7 @@
 
 ### Residual Follow-up Scope (Next Iteration)
 - [x] Finalize repo-boundary cutover (retain root as sole active repo and retire or archive legacy nested `amplitude-insights-bot/` assets).
-- [ ] Wire native Google ADK runtime objects (current implementation includes an ADK adapter and local loop fallback).
+- [x] Wire native Google ADK runtime objects (runtime now executes via ADK session/agent/runner object boundaries with SDK-compatible backend metadata).
 - [x] Build Agent Console UI parity against new `/v1/*` runtime APIs.
 - [x] Add capability refresh UX and approval inbox UX in the console.
 - [x] Add CI workflow wiring for `scripts/public_safety_scan.py` and deterministic test gate.

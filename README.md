@@ -7,7 +7,7 @@ Weekly metrics analysis bot that combines:
 Then sends an AI-generated summary to Slack.
 
 Agent-native runtime components now also exist in:
-- `agent_runtime/` (tenant-scoped session/task/artifact/approval runtime + tool registry)
+- `agent_runtime/` (tenant-scoped session/task/artifact/approval runtime, plus ADK-style session/agent/runner runtime objects)
 - `scripts/agent_runtime_api.py` (local API surface for session/approval/capability/artifact endpoints)
 - `scripts/public_safety_scan.py` (tenant-identifier and runtime-artifact safety checks)
 - `amplitude-insights-bot/` is a retired legacy local-only subtree and is ignored by git

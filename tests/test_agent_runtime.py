@@ -44,6 +44,15 @@ class AgentRuntimeLifecycleTest(unittest.TestCase):
         self.assertEqual(len(tasks), 1)
         self.assertEqual(tasks[0]["title"], "Collect metrics")
 
+    def test_runtime_descriptor_reports_adk_object_wiring(self) -> None:
+        runtime = self._runtime()
+        descriptor = runtime.runtime_descriptor()
+
+        self.assertEqual(descriptor["runtime"], "google_adk_object_model")
+        self.assertTrue(descriptor["available"])
+        self.assertTrue(descriptor["native_objects_wired"])
+        self.assertIn("AdkTurnRunner", descriptor["runner_object"])
+
     def test_turn_without_complete_task_blocks(self) -> None:
         runtime = self._runtime()
         session = runtime.create_session(tenant_id="tenant-one", objective="Run digest")

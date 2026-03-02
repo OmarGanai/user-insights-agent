@@ -78,6 +78,8 @@ class AgentRuntimeApiTest(unittest.TestCase):
         runtime_info = self._request("GET", "/v1/runtime")
         self.assertIn("runtime", runtime_info)
         self.assertIn("available", runtime_info)
+        self.assertTrue(runtime_info["native_objects_wired"])
+        self.assertIn("runner_object", runtime_info)
 
         refreshed = self._request("POST", "/v1/tenants/tenant-api/capabilities/refresh", payload={})
         self.assertEqual(refreshed["tenant_id"], "tenant-api")

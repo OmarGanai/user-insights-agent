@@ -9,7 +9,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict
 from urllib.parse import unquote
 
-from agent_runtime import AgentRuntime, runtime_descriptor
+from agent_runtime import AgentRuntime
 
 
 AGENT_CONSOLE_HTML = """<!doctype html>
@@ -695,7 +695,7 @@ class _Handler(BaseHTTPRequestHandler):
                 return
 
             if path == "/v1/runtime":
-                self._send(200, runtime_descriptor())
+                self._send(200, self.runtime.runtime_descriptor())
                 return
 
             if path.startswith("/v1/tenants/") and "/prompt-profiles/" in path:
