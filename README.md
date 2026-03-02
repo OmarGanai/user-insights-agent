@@ -133,6 +133,10 @@ Run the agent-runtime API locally:
 python scripts/agent_runtime_api.py --host 127.0.0.1 --port 8788
 ```
 
+Then open the Agent Console:
+
+- `http://127.0.0.1:8788`
+
 Prompt-profile rollout APIs (example):
 
 ```bash

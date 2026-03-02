@@ -32,6 +32,7 @@ class ToolRegistry:
             "delete_artifact": self.delete_artifact,
             "create_approval_request": self.create_approval_request,
             "request_approval": self.create_approval_request,
+            "list_approval_requests": self.list_approval_requests,
             "get_approval_request": self.get_approval_request,
             "resolve_approval_request": self.resolve_approval_request,
             "delete_approval_request": self.delete_approval_request,
@@ -113,6 +114,13 @@ class ToolRegistry:
 
     def get_approval_request(self, approval_id: str) -> Dict[str, Any]:
         return self.store.get_approval_request(approval_id)
+
+    def list_approval_requests(self, tenant_id: str, status: str = "pending") -> Dict[str, Any]:
+        return {
+            "approvals": self.store.list_approval_requests(tenant_id=tenant_id, status=status),
+            "tenant_id": tenant_id,
+            "status": status,
+        }
 
     def resolve_approval_request(
         self,

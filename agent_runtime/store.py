@@ -847,6 +847,24 @@ class FileWorkspaceStore:
                 return True
         return False
 
+    def list_approval_requests(self, tenant_id: str, status: str = "pending") -> List[Dict[str, Any]]:
+        normalized = status.strip().lower()
+        if normalized not in {"pending", "resolved"}:
+            raise ValueError("status must be pending or resolved")
+
+        self.ensure_tenant(tenant_id)
+        directory = self.tenant_root(tenant_id) / "approvals" / normalized
+        if not directory.exists():
+            return []
+
+        approvals: List[Dict[str, Any]] = []
+        for path in sorted(directory.glob("*.json")):
+            payload = self._read_json(path, default={})
+            if not isinstance(payload, dict) or not payload:
+                continue
+            approvals.append(payload)
+        return approvals
+
     def read_tenant_config(self, tenant_id: str) -> Dict[str, Any]:
         self.ensure_tenant(tenant_id)
         path = self.tenant_root(tenant_id) / "config" / "tenant.yaml"

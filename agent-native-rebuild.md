@@ -15,8 +15,8 @@
 ### Residual Follow-up Scope (Next Iteration)
 - [ ] Finalize repo-boundary cutover (retain root as sole active repo and retire or archive legacy nested `amplitude-insights-bot/` assets).
 - [ ] Wire native Google ADK runtime objects (current implementation includes an ADK adapter and local loop fallback).
-- [ ] Build Agent Console UI parity against new `/v1/*` runtime APIs.
-- [ ] Add capability refresh UX and approval inbox UX in the console.
+- [x] Build Agent Console UI parity against new `/v1/*` runtime APIs.
+- [x] Add capability refresh UX and approval inbox UX in the console.
 - [x] Add CI workflow wiring for `scripts/public_safety_scan.py` and deterministic test gate.
 - [x] Complete prompt-profile canary rollout plumbing and evaluation harness.
 
@@ -197,15 +197,20 @@ All tool contracts are implemented as ADK tools (plus MCP-compatible integration
 2. `GET /v1/sessions/{id}`
 3. `POST /v1/sessions/{id}/turn`
 4. `POST /v1/sessions/{id}/resume`
-5. `DELETE /v1/sessions/{id}`
+5. `GET /v1/sessions/{id}/tasks`
+6. `POST /v1/sessions/{id}/tasks`
+7. `DELETE /v1/sessions/{id}`
 
 ### Approval APIs
 1. `GET /v1/approvals/{id}`
 2. `POST /v1/approvals/{id}/resolve`
+3. `GET /v1/tenants/{tenant_id}/approvals/pending`
+4. `GET /v1/tenants/{tenant_id}/approvals/resolved`
 
 ### Capability APIs
 1. `GET /v1/tenants/{tenant_id}/capabilities`
 2. `POST /v1/tenants/{tenant_id}/capabilities/refresh`
+3. `GET /v1/runtime`
 
 ### Prompt Profile APIs
 1. `GET /v1/tenants/{tenant_id}/prompt-profiles/{profile}/rollout`
