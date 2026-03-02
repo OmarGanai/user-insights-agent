@@ -24,7 +24,7 @@ DEFAULT_EXCLUDES = [
     "tmp/**",
     "workspace/**",
     "**/.DS_Store",
-    "amplitude-insights-bot/.env",
+    "amplitude-insights-bot/**",
     "scripts/public_safety_scan.py",
     "tests/test_public_safety_scan.py",
 ]

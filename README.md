@@ -10,6 +10,7 @@ Agent-native runtime components now also exist in:
 - `agent_runtime/` (tenant-scoped session/task/artifact/approval runtime + tool registry)
 - `scripts/agent_runtime_api.py` (local API surface for session/approval/capability/artifact endpoints)
 - `scripts/public_safety_scan.py` (tenant-identifier and runtime-artifact safety checks)
+- `amplitude-insights-bot/` is a retired legacy local-only subtree and is ignored by git
 
 ## What It Does
 

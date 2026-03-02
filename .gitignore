@@ -12,7 +12,9 @@ venv/
 # Local secrets
 .env
 *.env.local
-amplitude-insights-bot/.env
+
+# Retired legacy subtree (local-only, never tracked)
+amplitude-insights-bot/
 
 # Runtime artifacts
 tmp/

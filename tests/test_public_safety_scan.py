@@ -39,6 +39,20 @@ class PublicSafetyScanTest(unittest.TestCase):
             self.assertEqual(identifiers, [])
             self.assertEqual(artifacts, [])
 
+    def test_identifier_scan_ignores_retired_legacy_subtree(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            legacy_dir = root / "amplitude-insights-bot"
+            legacy_dir.mkdir(parents=True)
+            banned_token = "ee" + "va-ai"
+            (legacy_dir / "legacy.md").write_text(
+                f"Legacy private note with {banned_token} token.",
+                encoding="utf-8",
+            )
+
+            findings = scan_identifiers(root)
+            self.assertEqual(findings, [])
+
 
 if __name__ == "__main__":
     unittest.main()

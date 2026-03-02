@@ -13,7 +13,7 @@
 - [x] Update this plan with completed checkboxes and residual follow-up scope.
 
 ### Residual Follow-up Scope (Next Iteration)
-- [ ] Finalize repo-boundary cutover (retain root as sole active repo and retire or archive legacy nested `amplitude-insights-bot/` assets).
+- [x] Finalize repo-boundary cutover (retain root as sole active repo and retire or archive legacy nested `amplitude-insights-bot/` assets).
 - [ ] Wire native Google ADK runtime objects (current implementation includes an ADK adapter and local loop fallback).
 - [x] Build Agent Console UI parity against new `/v1/*` runtime APIs.
 - [x] Add capability refresh UX and approval inbox UX in the console.
@@ -25,9 +25,9 @@ Rebuild the current pipeline into a true agent system, implemented on Google ADK
 
 ## Repository Baseline and Cutover Constraints (Local Snapshot: 2026-03-01)
 1. Active implementation files are in repository root (`clients/`, `services/`, `scripts/`, `tests/`, `docs/`) and root is the active git worktree.
-2. Legacy nested folder `amplitude-insights-bot/` remains with historical workflow/env artifacts; it should be treated as non-canonical.
+2. Legacy nested folder `amplitude-insights-bot/` is retired from tracked scope and treated as local-only/non-canonical.
 3. Historical sensitive-identifier baseline was high before sanitization; ongoing public-safety scans should remain mandatory.
-4. Secret-bearing local env file is present at `amplitude-insights-bot/.env` with multiple populated values; this must remain untracked.
+4. Secret-bearing local env file may still exist at `amplitude-insights-bot/.env`; subtree remains git-ignored and untracked.
 5. Live Amplitude contract test requires credentials and should remain opt-in, while deterministic tests stay default.
 
 ## Public-Safe Cutover Checklist (Specific to This Copy)
@@ -423,8 +423,8 @@ All tool contracts are implemented as ADK tools (plus MCP-compatible integration
    - PR template: `.github/PULL_REQUEST_TEMPLATE.md`
    - RFC templates: none found
 2. Root CI workflow exists at `.github/workflows/ci.yml` (deterministic tests + public-safety scan).
-3. Legacy nested workflow template still exists at `amplitude-insights-bot/.github/workflows/amplitude-insights-bot.yml`.
-4. Legacy nested directory still contains `.env` and `.env.example` and should remain untracked / out of public-safe release scope.
+3. Legacy nested workflow template has been retired from tracked tree; root `.github/workflows/ci.yml` is the sole active workflow.
+4. Local-only legacy env artifacts (if present) remain out of tracked/public-safe scope via root gitignore and scan excludes.
 
 ### Implementation Patterns
 1. Python typing-first style across runtime and services (`typing`, dataclasses, explicit return payloads).
@@ -436,7 +436,7 @@ All tool contracts are implemented as ADK tools (plus MCP-compatible integration
 7. `ast-grep` is not available in this local environment; pattern analysis used `rg` fallback.
 
 ### Recommendations
-1. Convert "repo-boundary cutover" residual task from removing embedded `.git` (already absent) to removing or quarantining legacy nested `amplitude-insights-bot/` assets that still create path/workflow ambiguity.
+1. Keep repo-boundary cutover enforced by not reintroducing tracked files under `amplitude-insights-bot/`.
 2. Continue normalizing or redacting legacy private-org references in historical docs where public distribution requires it.
 3. Keep `scripts/public_safety_scan.py` as a required CI gate and pair it with tracked-artifact checks for `tmp/` and `workspace/`.
-4. Decide whether `amplitude-insights-bot/` should be archived outside this repo or retained as historical context.
+4. Remove local `amplitude-insights-bot/` remnants on developer machines once migration references are no longer needed.
