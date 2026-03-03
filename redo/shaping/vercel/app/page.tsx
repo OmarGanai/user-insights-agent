@@ -42,13 +42,38 @@ export default function Home() {
   const [sources, setSources] = useState<Source[]>(MOCK_SOURCES)
   const [sections, setSections] = useState<ReportSection[]>(MOCK_REPORT_SECTIONS)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const seededNow = new Date().toISOString()
   const previewPayload = renderBlockkitPreview({
     id: "prototype-artifact",
     periodLabel: "Feb 24 - Mar 2, 2026",
     sections,
     hypotheses: MOCK_HYPOTHESES,
     recommendations: MOCK_RECOMMENDATIONS,
-    updatedAt: new Date().toISOString(),
+    evidenceMap: {},
+    runMetadata: {
+      runId: "prototype-run",
+      generatedAt: seededNow,
+      completion: {
+        status: "success",
+        summary: "Prototype artifact",
+        completedAt: seededNow,
+      },
+      runtimeContext: {
+        sourceInventory: [],
+        capabilityMap: [],
+        vocabulary: [],
+        recentRunState: {
+          runId: null,
+          completedAt: null,
+          statusSummary: "prototype",
+        },
+      },
+      promptSnapshot: "prototype prompt snapshot",
+      traceId: "prototype-trace",
+      traceStepIds: [],
+    },
+    edits: [],
+    updatedAt: seededNow,
     publishMetadata: null,
   } satisfies ReportArtifact)
 

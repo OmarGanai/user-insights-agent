@@ -14,13 +14,38 @@ const globalStore = globalThis as typeof globalThis & {
 }
 
 function createInitialArtifact(): ReportArtifact {
+  const now = new Date().toISOString()
   return {
     id: INITIAL_ARTIFACT_ID,
     periodLabel: INITIAL_PERIOD_LABEL,
     sections: structuredClone(MOCK_REPORT_SECTIONS),
     hypotheses: structuredClone(MOCK_HYPOTHESES),
     recommendations: structuredClone(MOCK_RECOMMENDATIONS),
-    updatedAt: new Date().toISOString(),
+    evidenceMap: {},
+    runMetadata: {
+      runId: "seeded-run",
+      generatedAt: now,
+      completion: {
+        status: "success",
+        summary: "Seeded artifact initialized for compatibility paths.",
+        completedAt: now,
+      },
+      runtimeContext: {
+        sourceInventory: [],
+        capabilityMap: [],
+        vocabulary: [],
+        recentRunState: {
+          runId: null,
+          completedAt: null,
+          statusSummary: "seeded",
+        },
+      },
+      promptSnapshot: "Seeded artifact compatibility snapshot.",
+      traceId: "seeded-trace",
+      traceStepIds: [],
+    },
+    edits: [],
+    updatedAt: now,
     publishMetadata: null,
   }
 }
