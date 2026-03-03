@@ -33,6 +33,7 @@ import type {
   EvidenceResolution,
   PipelineTrace,
   ReportArtifact,
+  SlackPayload,
   SourceStatusResponse,
 } from "@/lib/vector/types"
 
@@ -54,6 +55,8 @@ export default function Home() {
   const [sources, setSources] = useState<Source[]>(MOCK_SOURCES)
   const [reportArtifact, setReportArtifact] = useState<ReportArtifact | null>(null)
   const [trace, setTrace] = useState<PipelineTrace | null>(null)
+  const [previewPayload, setPreviewPayload] = useState<SlackPayload | null>(null)
+  const [publishError, setPublishError] = useState<string | null>(null)
   const [evidenceDetail, setEvidenceDetail] = useState<EvidenceResolution | null>(null)
   const [evidenceLoading, setEvidenceLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -83,12 +86,30 @@ export default function Home() {
     setTrace(data.trace)
   }, [])
 
+  const loadPreviewPayload = useCallback(async () => {
+    const response = await fetch("/api/report-artifact/preview", { cache: "no-store" })
+    const data = await parseJson<{
+      payload: SlackPayload
+      publishMetadata: ReportArtifact["publishMetadata"]
+    }>(response)
+
+    setPreviewPayload(data.payload)
+    setReportArtifact((current) =>
+      current
+        ? {
+            ...current,
+            publishMetadata: data.publishMetadata ?? current.publishMetadata,
+          }
+        : current
+    )
+  }, [])
+
   useEffect(() => {
     let active = true
 
     ;(async () => {
       try {
-        await Promise.all([loadSources(), loadArtifact(), loadTrace()])
+        await Promise.all([loadSources(), loadArtifact(), loadTrace(), loadPreviewPayload()])
       } catch {
         // Keep mock-backed fallback if live bootstrap fails.
       } finally {
@@ -101,13 +122,48 @@ export default function Home() {
     return () => {
       active = false
     }
-  }, [loadArtifact, loadSources, loadTrace])
+  }, [loadArtifact, loadPreviewPayload, loadSources, loadTrace])
 
   const handlePublish = useCallback(async () => {
+    setPublishError(null)
     setPublishingToSlack(true)
-    setTimeout(() => {
+
+    try {
+      const response = await fetch("/api/report-artifact/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: false }),
+      })
+
+      const data = (await response.json()) as {
+        payload?: SlackPayload
+        publishMetadata?: ReportArtifact["publishMetadata"]
+      }
+
+      if (data.payload) {
+        setPreviewPayload(data.payload)
+      }
+
+      if (data.publishMetadata) {
+        setReportArtifact((current) =>
+          current
+            ? {
+                ...current,
+                publishMetadata: data.publishMetadata ?? null,
+              }
+            : current
+        )
+      }
+
+      if (!response.ok) {
+        setPublishError(data.publishMetadata?.error || "Slack publish failed. Check webhook config.")
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Slack publish failed."
+      setPublishError(message)
+    } finally {
       setPublishingToSlack(false)
-    }, 1200)
+    }
   }, [])
 
   const handleRefreshSource = useCallback(
@@ -141,35 +197,39 @@ export default function Home() {
       const data = await parseJson<{ artifact: ReportArtifact; trace: PipelineTrace }>(response)
       setReportArtifact(data.artifact)
       setTrace(data.trace)
-      await loadSources()
+      await Promise.all([loadSources(), loadPreviewPayload()])
     } finally {
       setIsRefreshing(false)
     }
-  }, [loadSources])
+  }, [loadPreviewPayload, loadSources])
 
-  const handleSectionUpdate = useCallback(async (id: string, content: string) => {
-    setReportArtifact((current) => {
-      if (!current) return current
-      return {
-        ...current,
-        sections: current.sections.map((section) =>
-          section.id === id ? { ...section, content } : section
-        ),
-      }
-    })
-
-    try {
-      const response = await fetch(`/api/report-artifact/sections/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
+  const handleSectionUpdate = useCallback(
+    async (id: string, content: string) => {
+      setReportArtifact((current) => {
+        if (!current) return current
+        return {
+          ...current,
+          sections: current.sections.map((section) =>
+            section.id === id ? { ...section, content } : section
+          ),
+        }
       })
-      const data = await parseJson<{ artifact: ReportArtifact }>(response)
-      setReportArtifact(data.artifact)
-    } catch {
-      await loadArtifact()
-    }
-  }, [loadArtifact])
+
+      try {
+        const response = await fetch(`/api/report-artifact/sections/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        })
+        const data = await parseJson<{ artifact: ReportArtifact }>(response)
+        setReportArtifact(data.artifact)
+        await loadPreviewPayload()
+      } catch {
+        await Promise.all([loadArtifact(), loadPreviewPayload()])
+      }
+    },
+    [loadArtifact, loadPreviewPayload]
+  )
 
   const handleEvidenceClick = useCallback(async (evidenceId: string) => {
     setDebuggerOpen(true)
@@ -244,7 +304,11 @@ export default function Home() {
               </Button>
             </div>
             <div className="flex-1 overflow-hidden">
-              <SourcesPanel sources={sources} onRefreshSource={handleRefreshSource} />
+              <SourcesPanel
+                sources={sources}
+                onRefreshSource={handleRefreshSource}
+                publishMetadata={reportArtifact?.publishMetadata ?? null}
+              />
             </div>
           </div>
         ) : (
@@ -286,6 +350,9 @@ export default function Home() {
             onEvidenceClick={handleEvidenceClick}
             onRefreshDraft={handleRefreshDraft}
             isRefreshing={isRefreshing || isBootstrapping}
+            isLoading={isBootstrapping}
+            publishMetadata={reportArtifact?.publishMetadata ?? null}
+            periodLabel={reportArtifact?.periodLabel}
           />
         </div>
 
@@ -307,14 +374,14 @@ export default function Home() {
             </div>
             <div className="flex-1 overflow-hidden">
               <ReportPreview
-                sections={sections}
-                hypotheses={hypotheses}
-                recommendations={recommendations}
+                payload={previewPayload}
                 showingPreview={showingSlackPreview}
                 onShowPreview={() => setShowingSlackPreview(true)}
                 onHidePreview={() => setShowingSlackPreview(false)}
                 onPublish={handlePublish}
                 publishingToSlack={publishingToSlack}
+                publishMetadata={reportArtifact?.publishMetadata ?? null}
+                publishError={publishError}
               />
             </div>
           </div>

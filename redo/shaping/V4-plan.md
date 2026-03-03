@@ -27,20 +27,20 @@ Finalize Slack preview/publish fidelity and distribution packaging for a public,
 
 ## Implementation Checklist
 
-- [ ] Implement canonical renderer (`render_blockkit_preview`) as the single payload source.
-- [ ] Wire right-panel preview to canonical serializer output.
-- [ ] Implement `post_slack_message` webhook publish with robust error handling.
-- [ ] Persist publish metadata (timestamp, destination label, success/failure) on shared artifact.
-- [ ] Surface publish metadata in UI (sources/report context).
-- [ ] Add webhook configuration and required secrets to `.env.example` and setup docs.
-- [ ] Document optional bot-token path (`chat.postMessage`) as future mode only.
-- [ ] Run end-to-end test that compares preview payload and published payload equivalence.
+- [x] Implement canonical renderer (`render_blockkit_preview`) as the single payload source.
+- [x] Wire right-panel preview to canonical serializer output.
+- [x] Implement `post_slack_message` webhook publish with robust error handling.
+- [x] Persist publish metadata (timestamp, destination label, success/failure) on shared artifact.
+- [x] Surface publish metadata in UI (sources/report context).
+- [x] Add webhook configuration and required secrets to `.env.example` and setup docs.
+- [x] Document optional bot-token path (`chat.postMessage`) as future mode only.
+- [x] Run end-to-end test that compares preview payload and published payload equivalence.
 
 ## Verification
 
-- [ ] Preview payload and published payload are equivalent for the same artifact.
-- [ ] Publish success and failure states are clear to user.
-- [ ] External reviewer can run project locally from docs and environment template.
+- [x] Preview payload and published payload are equivalent for the same artifact.
+- [x] Publish success and failure states are clear to user.
+- [x] External reviewer can run project locally from docs and environment template.
 - [ ] Live demo URL is published and documented.
 
 ## Demo Script

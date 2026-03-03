@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "test:vector": "bun test tests/vector"
+    "test:vector": "bun test tests/vector",
+    "test:e2e:payload-equivalence": "node scripts/test-preview-publish-equivalence.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

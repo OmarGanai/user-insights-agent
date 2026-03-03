@@ -30,6 +30,8 @@ import {
   type Source,
   type ReportSection,
 } from "@/lib/mock-data"
+import { renderBlockkitPreview } from "@/lib/vector/slack"
+import type { ReportArtifact } from "@/lib/vector/types"
 
 export default function Home() {
   const [debuggerOpen, setDebuggerOpen] = useState(false)
@@ -40,6 +42,15 @@ export default function Home() {
   const [sources, setSources] = useState<Source[]>(MOCK_SOURCES)
   const [sections, setSections] = useState<ReportSection[]>(MOCK_REPORT_SECTIONS)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const previewPayload = renderBlockkitPreview({
+    id: "prototype-artifact",
+    periodLabel: "Feb 24 - Mar 2, 2026",
+    sections,
+    hypotheses: MOCK_HYPOTHESES,
+    recommendations: MOCK_RECOMMENDATIONS,
+    updatedAt: new Date().toISOString(),
+    publishMetadata: null,
+  } satisfies ReportArtifact)
 
   const handlePublish = useCallback(async () => {
     setPublishingToSlack(true)
@@ -200,9 +211,7 @@ export default function Home() {
             </div>
             <div className="flex-1 overflow-hidden">
               <ReportPreview
-                sections={sections}
-                hypotheses={MOCK_HYPOTHESES}
-                recommendations={MOCK_RECOMMENDATIONS}
+                payload={previewPayload}
                 showingPreview={showingSlackPreview}
                 onShowPreview={() => setShowingSlackPreview(true)}
                 onHidePreview={() => setShowingSlackPreview(false)}
