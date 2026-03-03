@@ -79,7 +79,7 @@ The intended scan path is an **F-pattern** anchored by the center column:
 - Section-to-section gap: `space-y-10` (40px). Distinct enough to visually separate topics.
 - Intra-section gap (heading to content): `mb-4` (16px).
 - No arbitrary pixel values (`p-[17px]`). All spacing uses the Tailwind scale.
-- Gap classes preferred over margin; no `space-*` utility classes.
+- Gap and `space-*` utilities are preferred over one-off margin stacks; all spacing must stay on the Tailwind scale.
 
 
 **Color & contrast**

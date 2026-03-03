@@ -13,6 +13,7 @@ selected_shape: B
 - Prior artifact: `redo/shaping/shaping-draft-3.md`
 - Prior implementation reference: `redo/previous-api-usage.md`
 - API validation pass: Context7 + official docs review on 2026-03-02
+- 🟡 UX prototype reference: `redo/shaping/vercel`
 
 ### Problem
 Product teams lose momentum because metrics, release notes, and feedback are fragmented across tools, so synthesis and reporting are slow and hard to trust.
@@ -60,15 +61,17 @@ PM / Product Ops.
 | R5.3 | Drafts, edits, evidence, and final report share one artifact model. | Must-have |
 | R5.4 | Tool layer exposes primitives; reasoning remains in the agent. | Must-have |
 | R5.5 | Runtime prompt injects source inventory, capability map, vocabulary, and recent run state. | Must-have |
+| R5.6 | 🟡 Agent loop uses explicit completion signaling (`complete_task`) with `success` / `partial` / `blocked` outcomes (no heuristic completion detection). | 🟡 Must-have |
+| R5.7 | 🟡 Workflow convenience tools are wrappers over primitive capabilities; decision logic remains in prompts/agent reasoning. | 🟡 Must-have |
 | R6 | MVP implementation constraints are respected. | Must-have |
 | R6.1 | Stack is Google ADK (Python) plus Gemini 3 Flash. | Must-have |
 | R6.2 | 🟡 API keys/tokens are managed through `.env` for MVP (Amplitude key/secret, Typeform token, Slack credential, Gemini key). | Must-have |
 | R6.3 | Scope favors minimal implementation over extensibility. | Must-have |
 | R6.4 | 🟡 If MVP uses Incoming Webhooks, posting target is preconfigured; channel picker is explicitly out of MVP unless bot-token path is added. | Must-have |
-| R7 | UX is simple, intentional, and high quality for desktop/laptop. | Undecided |
+| R7 | 🟡 UX is simple, intentional, and high quality for desktop/laptop (validated by explicit rubric in `spike-r7-results-ux-rubic-shape-b.md`). | 🟡 Must-have |
 | R7.1 | UI presents a clear 3-column layout (Sources, Draft, Report). | Must-have |
 | R7.2 | Debugger is available via tab/drawer without interrupting draft/report flow. | Must-have |
-| R7.3 | Visual quality bar is met (not cluttered, not enterprise-heavy). | Undecided |
+| R7.3 | 🟡 Visual quality bar is met (not cluttered, not enterprise-heavy) via measurable checklist + anti-pattern fails. | 🟡 Must-have |
 | R8 | Shape B should preserve seams for a future conversational Slack analyst mode. | Nice-to-have |
 | R8.1 | Architecture can add Slack thread Q&A using the same evidence/context primitives. | Nice-to-have |
 
@@ -132,6 +135,8 @@ PM / Product Ops.
 | **B8** | **Agent-native parity and runtime context injection** | |
 | B8.1 | Capability map enforces one tool equivalent per user action. | |
 | B8.2 | Runtime context injection includes source inventory, capability map, vocabulary, and recent run state. | |
+| B8.3 | 🟡 Agent runtime exposes `complete_task` with explicit completion status (`success`, `partial`, `blocked`) and summary. | |
+| B8.4 | 🟡 Tooling contract keeps primitives as source-of-truth; workflow helpers cannot hide decision logic from the agent. | |
 | **B9** | **Packaging and demo distribution** | |
 | B9.1 | Public repository includes setup docs and `.env` template for keys. | |
 | B9.2 | Deploy a demo URL that runs the review-first flow end to end. | |
@@ -158,17 +163,18 @@ PM / Product Ops.
 | R4 | Slack output is faithful between preview and publish. | Must-have | ✅ |
 | R5 | System satisfies agent-native architecture constraints. | Must-have | ✅ |
 | R6 | MVP implementation constraints are respected. | Must-have | ✅ |
-| R7 | UX is simple, intentional, and high quality for desktop/laptop. | Undecided | ❌ |
+| R7 | 🟡 UX is simple, intentional, and high quality for desktop/laptop. | 🟡 Must-have | 🟡 ✅ |
 | R8 | Shape B should preserve seams for a future conversational Slack analyst mode. | Nice-to-have | ✅ |
 
 **Notes:**
-- R7 fails: quality bar is subjective right now and has no explicit acceptance rubric.
+- 🟡 R7 passes: quality bar is now explicit in `redo/shaping/spike-r7-results-ux-rubic-shape-b.md` with measurable checklist + anti-pattern auto-fails.
 
 ## Unsolved Summary (Selected Shape B)
 
-- Undecided requirements: R7, R7.3.
-- Fit-check failures: R7.
-- Needed to close R7: add a concrete UX acceptance rubric (layout, typography, spacing, visual hierarchy, and mobile/desktop checks).
+- 🟡 Undecided requirements: none.
+- 🟡 Fit-check failures: none.
+- 🟡 Slicing artifacts created for implementation transition: `redo/shaping/vector-slices-draft-1.md`, `redo/shaping/V1-plan.md`, `redo/shaping/V2-plan.md`, `redo/shaping/V3-plan.md`, `redo/shaping/V4-plan.md`.
+- 🟡 Deferred until after MVP core flow (post-V4): explicit CRUD completeness matrix and emergent-capability/composability validation pass.
 
 ---
 
