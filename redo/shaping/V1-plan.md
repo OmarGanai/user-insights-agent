@@ -1,7 +1,7 @@
 ---
 shaping: true
 title: Vector - V1 Plan
-status: active
+status: completed
 slice: V1
 source_slices_doc: redo/shaping/vector-slices-final.md
 ---
@@ -39,10 +39,10 @@ Ship the interactive review shell (Sources / Draft / Publish + Debugger) with mo
 
 ## Verification
 
-- [ ] At 1280x800 and 1440x900, center column is visually dominant and no horizontal scroll appears.
-- [ ] Editing a section updates preview content without reload.
-- [ ] Collapsed rails can reopen both side panels.
-- [ ] Debugger opens/closes without blocking center workflow.
+- [x] At 1280x800 and 1440x900, center column is visually dominant and no horizontal scroll appears.
+- [x] Editing a section updates preview content without reload.
+- [x] Collapsed rails can reopen both side panels.
+- [x] Debugger opens/closes without blocking center workflow.
 
 ## Demo Script
 
