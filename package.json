@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test:vector": "bun test tests/vector"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

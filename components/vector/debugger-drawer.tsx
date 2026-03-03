@@ -4,12 +4,15 @@ import { useState } from "react"
 import { X, Check, Loader2, AlertTriangle, FileText, ChevronDown, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { PipelineStep } from "@/lib/mock-data"
+import type { EvidenceResolution } from "@/lib/vector/types"
 
 interface DebuggerDrawerProps {
   open: boolean
   onClose: () => void
   pipelineSteps: PipelineStep[]
   promptSnapshot: string
+  evidenceDetail?: EvidenceResolution | null
+  evidenceLoading?: boolean
 }
 
 function StepIcon({ status }: { status: PipelineStep["status"] }) {
@@ -69,8 +72,10 @@ export function DebuggerDrawer({
   onClose,
   pipelineSteps,
   promptSnapshot,
+  evidenceDetail,
+  evidenceLoading = false,
 }: DebuggerDrawerProps) {
-  const [tab, setTab] = useState<"pipeline" | "prompt">("pipeline")
+  const [tab, setTab] = useState<"pipeline" | "prompt" | "evidence">("pipeline")
 
   if (!open) return null
 
@@ -92,6 +97,16 @@ export function DebuggerDrawer({
               }`}
             >
               Pipeline
+            </button>
+            <button
+              onClick={() => setTab("evidence")}
+              className={`rounded px-2 py-0.5 text-[11px] font-medium transition-colors ${
+                tab === "evidence"
+                  ? "bg-accent text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Evidence
             </button>
             <button
               onClick={() => setTab("prompt")}
@@ -124,6 +139,28 @@ export function DebuggerDrawer({
               <PipelineStepRow key={step.id} step={step} />
             ))}
           </div>
+        ) : tab === "evidence" ? (
+          evidenceLoading ? (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground font-mono">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              Loading evidence...
+            </div>
+          ) : evidenceDetail ? (
+            <div className="space-y-2 text-xs font-mono text-foreground/80">
+              <p className="text-foreground font-semibold">{evidenceDetail.sourceName}</p>
+              <p className="leading-relaxed">{evidenceDetail.snippet}</p>
+              <p className="text-muted-foreground">
+                confidence={evidenceDetail.confidence} run={evidenceDetail.runId ?? "none"}
+              </p>
+              <p className="text-muted-foreground">
+                snapshot={evidenceDetail.snapshotId ?? "none"} step={evidenceDetail.traceStepId ?? "none"}
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground font-mono">
+              Click an evidence chip in the draft to inspect provenance.
+            </p>
+          )
         ) : (
           <pre className="whitespace-pre-wrap text-xs font-mono text-foreground/80 leading-relaxed">
             {promptSnapshot}

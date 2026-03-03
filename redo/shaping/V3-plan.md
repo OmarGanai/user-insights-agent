@@ -1,7 +1,7 @@
 ---
 shaping: true
 title: Vector - V3 Plan
-status: draft
+status: completed
 slice: V3
 source_slices_doc: redo/shaping/vector-slices-final.md
 ---
@@ -29,25 +29,25 @@ Deliver real decision-brief synthesis, persisted shared artifact editing, and cl
 
 ## Implementation Checklist
 
-- [ ] Implement `write_report_draft` flow to produce required brief sections, hypotheses, and recommendations.
-- [ ] Implement shared artifact persistence model (`draft`, `edits`, `evidence`, `run metadata`).
-- [ ] Wire `update_report_section` to persisted artifact updates.
-- [ ] Implement evidence mapping and `get_evidence_for_claim` resolution endpoint/tool.
-- [ ] Implement pipeline trace capture and prompt snapshot retrieval for debugger.
-- [ ] Inject runtime context payload (source inventory, capability map, vocabulary, recent run state) into synthesis runtime.
-- [ ] 🟡 Implement explicit `complete_task` completion signaling and persist completion status/summary in run metadata.
-- [ ] 🟡 Enforce primitive-first tooling for V3 paths; document any workflow helper as a delegating wrapper over primitives.
-- [ ] Wire center workbench and debugger drawer to live artifact + trace APIs.
-- [ ] Add integration tests for synthesis output contract and evidence trace integrity.
+- [x] Implement `write_report_draft` flow to produce required brief sections, hypotheses, and recommendations.
+- [x] Implement shared artifact persistence model (`draft`, `edits`, `evidence`, `run metadata`).
+- [x] Wire `update_report_section` to persisted artifact updates.
+- [x] Implement evidence mapping and `get_evidence_for_claim` resolution endpoint/tool.
+- [x] Implement pipeline trace capture and prompt snapshot retrieval for debugger.
+- [x] Inject runtime context payload (source inventory, capability map, vocabulary, recent run state) into synthesis runtime.
+- [x] 🟡 Implement explicit `complete_task` completion signaling and persist completion status/summary in run metadata.
+- [x] 🟡 Enforce primitive-first tooling for V3 paths; document any workflow helper as a delegating wrapper over primitives.
+- [x] Wire center workbench and debugger drawer to live artifact + trace APIs.
+- [x] Add integration tests for synthesis output contract and evidence trace integrity.
 
 ## Verification
 
-- [ ] Generating a draft from live snapshots produces all required sections.
-- [ ] Editing one section persists and survives reload/new fetch.
-- [ ] Clicking evidence chips opens debugger with correct provenance.
-- [ ] Debugger shows ingest/normalize/synthesize/render trace with prompt snapshot.
-- [ ] 🟡 Agent runs terminate via explicit `complete_task` status rather than heuristic stop conditions.
-- [ ] 🟡 Primitive-first tool contract is verifiable in the V3 execution path (workflow helpers delegate, not decide).
+- [x] Generating a draft from live snapshots produces all required sections.
+- [x] Editing one section persists and survives reload/new fetch.
+- [x] Clicking evidence chips opens debugger with correct provenance.
+- [x] Debugger shows ingest/normalize/synthesize/render trace with prompt snapshot.
+- [x] 🟡 Agent runs terminate via explicit `complete_task` status rather than heuristic stop conditions.
+- [x] 🟡 Primitive-first tool contract is verifiable in the V3 execution path (workflow helpers delegate, not decide).
 
 ## Demo Script
 

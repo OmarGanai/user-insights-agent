@@ -149,10 +149,17 @@ export function SourcesPanel({ sources, onRefreshSource }: SourcesPanelProps) {
                 </div>
               )}
 
-              {/* Stale warning */}
-              {source.error && (
+              {/* Notice / warnings */}
+              {source.notice && (
                 <div className="ml-[42px] mr-3 mb-1 px-3">
                   <span className="text-xs text-amber-500">
+                    {source.notice}
+                  </span>
+                </div>
+              )}
+              {source.error && (
+                <div className="ml-[42px] mr-3 mb-1 px-3">
+                  <span className="text-xs text-red-500">
                     {source.error}
                   </span>
                 </div>

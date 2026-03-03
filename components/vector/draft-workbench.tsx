@@ -9,6 +9,12 @@ interface DraftWorkbenchProps {
   sections: ReportSection[]
   hypotheses: Hypothesis[]
   recommendations: Recommendation[]
+  sourceFreshness?: Array<{
+    id: string
+    name: string
+    lastSync: string
+    status: "synced" | "stale" | "error" | "syncing"
+  }>
   onSectionUpdate: (id: string, content: string) => void
   onEvidenceClick: (evidenceId: string) => void
   onRefreshDraft: () => void
@@ -208,11 +214,19 @@ export function DraftWorkbench({
   sections,
   hypotheses,
   recommendations,
+  sourceFreshness = [],
   onSectionUpdate,
   onEvidenceClick,
   onRefreshDraft,
   isRefreshing,
 }: DraftWorkbenchProps) {
+  const statusClass: Record<"synced" | "syncing" | "stale" | "error", string> = {
+    synced: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400",
+    syncing: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+    stale: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
+    error: "bg-red-500/15 text-red-700 dark:text-red-400",
+  }
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-3xl px-10 py-10">
@@ -230,6 +244,16 @@ export function DraftWorkbench({
             <p className="mt-1 text-sm text-muted-foreground">
               Feb 24 - Mar 2, 2026
             </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {sourceFreshness.map((source) => (
+                <span
+                  key={source.id}
+                  className={`inline-flex items-center gap-1 rounded px-2 py-1 text-[11px] font-mono ${statusClass[source.status]}`}
+                >
+                  {source.name}: {source.lastSync}
+                </span>
+              ))}
+            </div>
           </div>
           <Button
             variant="outline"
