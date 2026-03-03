@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react"
 import { Pencil, Check, X, RefreshCw, ChevronDown, ChevronRight, BarChart3, FileText } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { ReportSection, Hypothesis, Recommendation, Evidence } from "@/lib/mock-data"
+import type { PublishMetadata } from "@/lib/vector/types"
 
 interface DraftWorkbenchProps {
   sections: ReportSection[]
@@ -13,6 +14,9 @@ interface DraftWorkbenchProps {
   onEvidenceClick: (evidenceId: string) => void
   onRefreshDraft: () => void
   isRefreshing: boolean
+  isLoading?: boolean
+  publishMetadata?: PublishMetadata | null
+  periodLabel?: string
 }
 
 function ConfidenceBadge({ level }: { level: Hypothesis["confidence"] }) {
@@ -212,7 +216,18 @@ export function DraftWorkbench({
   onEvidenceClick,
   onRefreshDraft,
   isRefreshing,
+  isLoading = false,
+  publishMetadata = null,
+  periodLabel = "Feb 24 - Mar 2, 2026",
 }: DraftWorkbenchProps) {
+  const publishSummary = publishMetadata
+    ? publishMetadata.status === "success"
+      ? `Last publish: sent to ${publishMetadata.destinationLabel} at ${new Date(
+          publishMetadata.attemptedAt
+        ).toLocaleString()}`
+      : `Last publish failed at ${new Date(publishMetadata.attemptedAt).toLocaleString()}`
+    : "Not published yet"
+
   return (
     <div className="h-full overflow-y-auto">
       <div className="mx-auto max-w-3xl px-10 py-10">
@@ -228,7 +243,13 @@ export function DraftWorkbench({
               Weekly Product Brief
             </h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Feb 24 - Mar 2, 2026
+              {periodLabel}
+            </p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {publishSummary}
+              {publishMetadata?.status === "failed" && publishMetadata.error
+                ? ` \u2014 ${publishMetadata.error}`
+                : ""}
             </p>
           </div>
           <Button
@@ -245,6 +266,11 @@ export function DraftWorkbench({
 
         {/* Sections */}
         <div className="mt-10 space-y-10">
+          {isLoading && (
+            <div className="rounded-md border border-border bg-background p-4 text-sm text-muted-foreground">
+              Loading latest artifact...
+            </div>
+          )}
           {sections
             .filter((s) => s.id !== "sec-hypotheses" && s.id !== "sec-recommendations")
             .map((section) => (
