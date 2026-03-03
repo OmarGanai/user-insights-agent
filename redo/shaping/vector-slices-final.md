@@ -1,16 +1,16 @@
 ---
 shaping: true
-title: Vector - Slices Draft 1
-status: draft
+title: Vector - Slices Final
+status: final
 selected_shape: B
-source_shaping_doc: redo/shaping/shaping-draft-4.md
+source_shaping_doc: redo/shaping/shaping-final.md
 ---
 
-# Vector - Slices Draft 1
+# Vector - Slices Final
 
 ## Context
 
-This document slices selected Shape B from `redo/shaping/shaping-draft-4.md` into vertical, demo-able implementation increments.
+This document slices selected Shape B from `redo/shaping/shaping-final.md` into vertical, demo-able implementation increments.
 
 The UX/UI baseline comes from the Vercel prototype at `redo/shaping/vercel`.
 

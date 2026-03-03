@@ -1,9 +1,9 @@
 ---
 shaping: true
 title: Vector - V1 Plan
-status: draft
+status: active
 slice: V1
-source_slices_doc: redo/shaping/vector-slices-draft-1.md
+source_slices_doc: redo/shaping/vector-slices-final.md
 ---
 
 # Vector - V1 Plan
@@ -29,13 +29,13 @@ Ship the interactive review shell (Sources / Draft / Publish + Debugger) with mo
 
 ## Implementation Checklist
 
-- [ ] Port or align shell layout from `redo/shaping/vercel/app/page.tsx` into the main app surface.
-- [ ] Implement left panel open/collapse behavior with icon rail tooltips.
-- [ ] Implement draft workbench editing loop (`idle -> editing -> saved/canceled`) using local state.
-- [ ] Wire draft artifact state so preview reflects edits immediately.
-- [ ] Implement right panel ready/preview modes and simulated publish state progression.
-- [ ] Implement debugger footer toggle + drawer tabs using mock pipeline/prompt data.
-- [ ] Run R7 rubric subset for V1 surfaces (layout, hierarchy, interaction clarity).
+- [x] Port or align shell layout from `redo/shaping/vercel/app/page.tsx` into the main app surface.
+- [x] Implement left panel open/collapse behavior with icon rail tooltips.
+- [x] Implement draft workbench editing loop (`idle -> editing -> saved/canceled`) using local state.
+- [x] Wire draft artifact state so preview reflects edits immediately.
+- [x] Implement right panel ready/preview modes and simulated publish state progression.
+- [x] Implement debugger footer toggle + drawer tabs using mock pipeline/prompt data.
+- [x] Run R7 rubric subset for V1 surfaces (layout, hierarchy, interaction clarity).
 
 ## Verification
 
@@ -54,4 +54,4 @@ Ship the interactive review shell (Sources / Draft / Publish + Debugger) with mo
 
 ## Exit Criteria
 
-- V1 delivers a complete, interactive UI loop with mock data and satisfies V1 demo checks from `vector-slices-draft-1.md`.
+- V1 delivers a complete, interactive UI loop with mock data and satisfies V1 demo checks from `vector-slices-final.md`.

@@ -1,11 +1,11 @@
 ---
 shaping: true
-title: Vector - Shaping Draft 4
-status: draft
+title: Vector - Shaping Final
+status: final
 selected_shape: B
 ---
 
-# Vector - Shaping Draft 4
+# Vector - Shaping Final
 
 ## Frame
 
@@ -173,7 +173,7 @@ PM / Product Ops.
 
 - 🟡 Undecided requirements: none.
 - 🟡 Fit-check failures: none.
-- 🟡 Slicing artifacts created for implementation transition: `redo/shaping/vector-slices-draft-1.md`, `redo/shaping/V1-plan.md`, `redo/shaping/V2-plan.md`, `redo/shaping/V3-plan.md`, `redo/shaping/V4-plan.md`.
+- 🟡 Slicing artifacts created for implementation transition: `redo/shaping/vector-slices-final.md`, `redo/shaping/V1-plan.md`, `redo/shaping/V2-plan.md`, `redo/shaping/V3-plan.md`, `redo/shaping/V4-plan.md`.
 - 🟡 Deferred until after MVP core flow (post-V4): explicit CRUD completeness matrix and emergent-capability/composability validation pass.
 
 ---

@@ -3,7 +3,7 @@ shaping: true
 title: Vector - V3 Plan
 status: draft
 slice: V3
-source_slices_doc: redo/shaping/vector-slices-draft-1.md
+source_slices_doc: redo/shaping/vector-slices-final.md
 ---
 
 # Vector - V3 Plan
