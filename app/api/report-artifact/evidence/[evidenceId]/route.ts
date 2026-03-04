@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { getEvidenceForClaim } from "@/lib/vector/workflows"
 
+export const dynamic = "force-dynamic"
+
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ evidenceId: string }> }

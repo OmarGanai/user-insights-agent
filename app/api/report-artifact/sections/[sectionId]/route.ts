@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
 import { updateReportSection } from "@/lib/vector/workflows"
 
+export const dynamic = "force-dynamic"
+
 interface RequestBody {
   content?: unknown
 }

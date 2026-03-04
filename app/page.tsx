@@ -37,6 +37,20 @@ import type {
   SourceStatusResponse,
 } from "@/lib/vector/types"
 
+const REQUEST_TIMEOUT_MS = 8000
+
+function withTimeoutSignal(timeoutMs = REQUEST_TIMEOUT_MS): {
+  signal: AbortSignal
+  cleanup: () => void
+} {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  return {
+    signal: controller.signal,
+    cleanup: () => clearTimeout(timeout),
+  }
+}
+
 async function parseJson<T>(response: Response): Promise<T> {
   if (!response.ok) {
     const body = await response.text()
@@ -216,11 +230,13 @@ export default function Home() {
       })
 
       try {
+        const { signal, cleanup } = withTimeoutSignal()
         const response = await fetch(`/api/report-artifact/sections/${id}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ content }),
-        })
+          signal,
+        }).finally(cleanup)
         const data = await parseJson<{ artifact: ReportArtifact }>(response)
         setReportArtifact(data.artifact)
         await loadPreviewPayload()
@@ -236,9 +252,11 @@ export default function Home() {
     setEvidenceLoading(true)
 
     try {
+      const { signal, cleanup } = withTimeoutSignal()
       const response = await fetch(`/api/report-artifact/evidence/${evidenceId}`, {
         cache: "no-store",
-      })
+        signal,
+      }).finally(cleanup)
       const data = await parseJson<{ evidence: EvidenceResolution }>(response)
       setEvidenceDetail(data.evidence)
     } catch {
