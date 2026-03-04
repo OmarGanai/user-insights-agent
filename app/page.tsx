@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect } from "react"
 import {
   PanelLeftClose,
   PanelLeftOpen,
@@ -21,15 +21,44 @@ import { ReportPreview } from "@/components/vector/report-preview"
 import { DebuggerDrawer } from "@/components/vector/debugger-drawer"
 import { Button } from "@/components/ui/button"
 import {
-  MOCK_SOURCES,
-  MOCK_REPORT_SECTIONS,
   MOCK_HYPOTHESES,
-  MOCK_RECOMMENDATIONS,
   MOCK_PIPELINE_STEPS,
   MOCK_PROMPT_SNAPSHOT,
+  MOCK_RECOMMENDATIONS,
+  MOCK_REPORT_SECTIONS,
+  MOCK_SOURCES,
   type Source,
-  type ReportSection,
 } from "@/lib/mock-data"
+import type {
+  EvidenceResolution,
+  PipelineTrace,
+  ReportArtifact,
+  SlackPayload,
+  SourceStatusResponse,
+} from "@/lib/vector/types"
+
+const REQUEST_TIMEOUT_MS = 8000
+
+function withTimeoutSignal(timeoutMs = REQUEST_TIMEOUT_MS): {
+  signal: AbortSignal
+  cleanup: () => void
+} {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  return {
+    signal: controller.signal,
+    cleanup: () => clearTimeout(timeout),
+  }
+}
+
+async function parseJson<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const body = await response.text()
+    throw new Error(body || `Request failed (${response.status})`)
+  }
+
+  return (await response.json()) as T
+}
 
 export default function Home() {
   const [debuggerOpen, setDebuggerOpen] = useState(false)
@@ -38,49 +67,205 @@ export default function Home() {
   const [showingSlackPreview, setShowingSlackPreview] = useState(false)
   const [publishingToSlack, setPublishingToSlack] = useState(false)
   const [sources, setSources] = useState<Source[]>(MOCK_SOURCES)
-  const [sections, setSections] = useState<ReportSection[]>(MOCK_REPORT_SECTIONS)
+  const [reportArtifact, setReportArtifact] = useState<ReportArtifact | null>(null)
+  const [trace, setTrace] = useState<PipelineTrace | null>(null)
+  const [previewPayload, setPreviewPayload] = useState<SlackPayload | null>(null)
+  const [publishError, setPublishError] = useState<string | null>(null)
+  const [evidenceDetail, setEvidenceDetail] = useState<EvidenceResolution | null>(null)
+  const [evidenceLoading, setEvidenceLoading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isBootstrapping, setIsBootstrapping] = useState(true)
+
+  const sections = reportArtifact?.sections ?? MOCK_REPORT_SECTIONS
+  const hypotheses = reportArtifact?.hypotheses ?? MOCK_HYPOTHESES
+  const recommendations = reportArtifact?.recommendations ?? MOCK_RECOMMENDATIONS
+  const pipelineSteps = trace?.steps ?? MOCK_PIPELINE_STEPS
+  const promptSnapshot = trace?.promptSnapshot ?? MOCK_PROMPT_SNAPSHOT
+
+  const loadSources = useCallback(async () => {
+    const response = await fetch("/api/sources", { cache: "no-store" })
+    const data = await parseJson<SourceStatusResponse>(response)
+    setSources(data.sourceInventory)
+  }, [])
+
+  const loadArtifact = useCallback(async () => {
+    const response = await fetch("/api/report-artifact", { cache: "no-store" })
+    const data = await parseJson<{ artifact: ReportArtifact }>(response)
+    setReportArtifact(data.artifact)
+  }, [])
+
+  const loadTrace = useCallback(async () => {
+    const response = await fetch("/api/report-artifact/trace", { cache: "no-store" })
+    const data = await parseJson<{ trace: PipelineTrace | null }>(response)
+    setTrace(data.trace)
+  }, [])
+
+  const loadPreviewPayload = useCallback(async () => {
+    const response = await fetch("/api/report-artifact/preview", { cache: "no-store" })
+    const data = await parseJson<{
+      payload: SlackPayload
+      publishMetadata: ReportArtifact["publishMetadata"]
+    }>(response)
+
+    setPreviewPayload(data.payload)
+    setReportArtifact((current) =>
+      current
+        ? {
+            ...current,
+            publishMetadata: data.publishMetadata ?? current.publishMetadata,
+          }
+        : current
+    )
+  }, [])
+
+  useEffect(() => {
+    let active = true
+
+    ;(async () => {
+      try {
+        await Promise.all([loadSources(), loadArtifact(), loadTrace(), loadPreviewPayload()])
+      } catch {
+        // Keep mock-backed fallback if live bootstrap fails.
+      } finally {
+        if (active) {
+          setIsBootstrapping(false)
+        }
+      }
+    })()
+
+    return () => {
+      active = false
+    }
+  }, [loadArtifact, loadPreviewPayload, loadSources, loadTrace])
 
   const handlePublish = useCallback(async () => {
+    setPublishError(null)
     setPublishingToSlack(true)
-    setTimeout(() => {
-      setPublishingToSlack(false)
-    }, 1500)
-  }, [])
 
-  const handleRefreshSource = useCallback((id: string) => {
-    setSources((prev) =>
-      prev.map((s) =>
-        s.id === id ? { ...s, status: "syncing" as const } : s
-      )
-    )
-    setTimeout(() => {
-      setSources((prev) =>
-        prev.map((s) =>
-          s.id === id
-            ? { ...s, status: "synced" as const, lastSync: "Just now", error: undefined }
-            : s
+    try {
+      const response = await fetch("/api/report-artifact/publish", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dryRun: false }),
+      })
+
+      const data = (await response.json()) as {
+        payload?: SlackPayload
+        publishMetadata?: ReportArtifact["publishMetadata"]
+      }
+
+      if (data.payload) {
+        setPreviewPayload(data.payload)
+      }
+
+      if (data.publishMetadata) {
+        setReportArtifact((current) =>
+          current
+            ? {
+                ...current,
+                publishMetadata: data.publishMetadata ?? null,
+              }
+            : current
         )
+      }
+
+      if (!response.ok) {
+        setPublishError(data.publishMetadata?.error || "Slack publish failed. Check webhook config.")
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Slack publish failed."
+      setPublishError(message)
+    } finally {
+      setPublishingToSlack(false)
+    }
+  }, [])
+
+  const handleRefreshSource = useCallback(
+    async (id: string) => {
+      setSources((previous) =>
+        previous.map((source) => (source.id === id ? { ...source, status: "syncing" } : source))
       )
-    }, 1500)
-  }, [])
 
-  const handleRefreshDraft = useCallback(() => {
+      try {
+        const response = await fetch("/api/sources/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ sourceId: id }),
+        })
+        const data = await parseJson<{ sourceInventory: Source[] }>(response)
+        setSources(data.sourceInventory)
+      } catch {
+        await loadSources()
+      }
+    },
+    [loadSources]
+  )
+
+  const handleRefreshDraft = useCallback(async () => {
     setIsRefreshing(true)
-    setTimeout(() => setIsRefreshing(false), 2500)
-  }, [])
+    try {
+      const response = await fetch("/api/report-artifact/generate", {
+        method: "POST",
+        cache: "no-store",
+      })
+      const data = await parseJson<{ artifact: ReportArtifact; trace: PipelineTrace }>(response)
+      setReportArtifact(data.artifact)
+      setTrace(data.trace)
+      await Promise.all([loadSources(), loadPreviewPayload()])
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [loadPreviewPayload, loadSources])
 
-  const handleSectionUpdate = useCallback((id: string, content: string) => {
-    setSections((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, content } : s))
-    )
-  }, [])
+  const handleSectionUpdate = useCallback(
+    async (id: string, content: string) => {
+      setReportArtifact((current) => {
+        if (!current) return current
+        return {
+          ...current,
+          sections: current.sections.map((section) =>
+            section.id === id ? { ...section, content } : section
+          ),
+        }
+      })
 
-  const handleEvidenceClick = useCallback((_evidenceId: string) => {
+      try {
+        const { signal, cleanup } = withTimeoutSignal()
+        const response = await fetch(`/api/report-artifact/sections/${id}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+          signal,
+        }).finally(cleanup)
+        const data = await parseJson<{ artifact: ReportArtifact }>(response)
+        setReportArtifact(data.artifact)
+        await loadPreviewPayload()
+      } catch {
+        await Promise.all([loadArtifact(), loadPreviewPayload()])
+      }
+    },
+    [loadArtifact, loadPreviewPayload]
+  )
+
+  const handleEvidenceClick = useCallback(async (evidenceId: string) => {
     setDebuggerOpen(true)
+    setEvidenceLoading(true)
+
+    try {
+      const { signal, cleanup } = withTimeoutSignal()
+      const response = await fetch(`/api/report-artifact/evidence/${evidenceId}`, {
+        cache: "no-store",
+        signal,
+      }).finally(cleanup)
+      const data = await parseJson<{ evidence: EvidenceResolution }>(response)
+      setEvidenceDetail(data.evidence)
+    } catch {
+      setEvidenceDetail(null)
+    } finally {
+      setEvidenceLoading(false)
+    }
   }, [])
 
-  // Helper: get icon for source type
   function getSourceIcon(type: string) {
     switch (type) {
       case "amplitude":
@@ -98,27 +283,28 @@ export default function Home() {
     }
   }
 
-  // Helper: get tooltip text for source
   function getSourceLabel(source: Source) {
     if (source.type === "amplitude") return `${source.name} (${source.charts?.length ?? 0} charts)`
     if (source.type === "typeform") return `${source.name} (${source.responseCount ?? 0} responses)`
-    if (source.type === "ios_release") return `${source.name} (${source.latestRelease})`
+    if (source.type === "ios_release") return `${source.name} (${source.latestRelease ?? "n/a"})`
     return source.name
   }
 
+  const sourceFreshness = sources.map((source) => ({
+    id: source.id,
+    name: source.name,
+    lastSync: source.lastSync,
+    status: source.status,
+  }))
+
   return (
     <div className="flex h-screen flex-col overflow-hidden font-sans bg-background">
-      {/* Minimal header */}
       <header className="flex h-11 shrink-0 items-center border-b border-border px-4">
-        <span className="text-sm font-semibold tracking-tight text-foreground">
-          Vector
-        </span>
+        <span className="text-sm font-semibold tracking-tight text-foreground">Vector</span>
         <span className="ml-2.5 text-[11px] text-muted-foreground font-mono">W48</span>
       </header>
 
-      {/* 3-column body */}
       <div className="flex flex-1 overflow-hidden">
-        {/* Left: Sources */}
         {sourcesOpen ? (
           <div className="flex w-64 shrink-0 flex-col border-r border-border">
             <div className="flex h-9 shrink-0 items-center justify-between px-3">
@@ -136,7 +322,11 @@ export default function Home() {
               </Button>
             </div>
             <div className="flex-1 overflow-hidden">
-              <SourcesPanel sources={sources} onRefreshSource={handleRefreshSource} />
+              <SourcesPanel
+                sources={sources}
+                onRefreshSource={handleRefreshSource}
+                publishMetadata={reportArtifact?.publishMetadata ?? null}
+              />
             </div>
           </div>
         ) : (
@@ -168,20 +358,22 @@ export default function Home() {
           </div>
         )}
 
-        {/* Center: Draft Workbench */}
         <div className="flex-1 overflow-hidden">
           <DraftWorkbench
             sections={sections}
-            hypotheses={MOCK_HYPOTHESES}
-            recommendations={MOCK_RECOMMENDATIONS}
+            hypotheses={hypotheses}
+            recommendations={recommendations}
+            sourceFreshness={sourceFreshness}
             onSectionUpdate={handleSectionUpdate}
             onEvidenceClick={handleEvidenceClick}
             onRefreshDraft={handleRefreshDraft}
-            isRefreshing={isRefreshing}
+            isRefreshing={isRefreshing || isBootstrapping}
+            isLoading={isBootstrapping}
+            publishMetadata={reportArtifact?.publishMetadata ?? null}
+            periodLabel={reportArtifact?.periodLabel}
           />
         </div>
 
-        {/* Right: Block Kit Preview */}
         {previewOpen ? (
           <div className="flex w-[420px] shrink-0 flex-col border-l border-border">
             <div className="flex h-9 shrink-0 items-center justify-between px-3">
@@ -200,14 +392,14 @@ export default function Home() {
             </div>
             <div className="flex-1 overflow-hidden">
               <ReportPreview
-                sections={sections}
-                hypotheses={MOCK_HYPOTHESES}
-                recommendations={MOCK_RECOMMENDATIONS}
+                payload={previewPayload}
                 showingPreview={showingSlackPreview}
                 onShowPreview={() => setShowingSlackPreview(true)}
                 onHidePreview={() => setShowingSlackPreview(false)}
                 onPublish={handlePublish}
                 publishingToSlack={publishingToSlack}
+                publishMetadata={reportArtifact?.publishMetadata ?? null}
+                publishError={publishError}
               />
             </div>
           </div>
@@ -252,29 +444,30 @@ export default function Home() {
         )}
       </div>
 
-      {/* Debug toggle bar - anchored to bottom */}
-      <div className="flex h-8 shrink-0 items-center border-t border-border px-3">
+      <div className="flex h-8 shrink-0 items-center justify-between border-t border-border px-3">
         <Button
           variant="ghost"
           size="sm"
           onClick={() => setDebuggerOpen(!debuggerOpen)}
           className={`h-6 gap-1.5 px-2 text-[11px] font-mono ${
-            debuggerOpen
-              ? "bg-accent text-foreground"
-              : "text-muted-foreground hover:text-foreground"
+            debuggerOpen ? "bg-accent text-foreground" : "text-muted-foreground hover:text-foreground"
           }`}
         >
           <Terminal className="h-3 w-3" />
           Debug
         </Button>
+        <span className="text-[11px] font-mono text-muted-foreground">
+          completion: {reportArtifact?.runMetadata.completion.status ?? "pending"}
+        </span>
       </div>
 
-      {/* Debugger Drawer */}
       <DebuggerDrawer
         open={debuggerOpen}
         onClose={() => setDebuggerOpen(false)}
-        pipelineSteps={MOCK_PIPELINE_STEPS}
-        promptSnapshot={MOCK_PROMPT_SNAPSHOT}
+        pipelineSteps={pipelineSteps}
+        promptSnapshot={promptSnapshot}
+        evidenceDetail={evidenceDetail}
+        evidenceLoading={evidenceLoading}
       />
     </div>
   )

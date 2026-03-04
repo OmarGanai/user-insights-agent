@@ -4,10 +4,12 @@ import { useState } from "react"
 import { RefreshCw, ChevronRight, BarChart3, FileText, Smartphone, BookOpen, Building2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import type { Source, SourceType } from "@/lib/mock-data"
+import type { PublishMetadata } from "@/lib/vector/types"
 
 interface SourcesPanelProps {
   sources: Source[]
   onRefreshSource: (id: string) => void
+  publishMetadata?: PublishMetadata | null
 }
 
 function StatusDot({ status }: { status: Source["status"] }) {
@@ -71,12 +73,39 @@ function SourceStat({ source }: { source: Source }) {
   return null
 }
 
-export function SourcesPanel({ sources, onRefreshSource }: SourcesPanelProps) {
+export function SourcesPanel({
+  sources,
+  onRefreshSource,
+  publishMetadata = null,
+}: SourcesPanelProps) {
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const publishLabel = publishMetadata
+    ? publishMetadata.status === "success"
+      ? `Published to ${publishMetadata.destinationLabel}`
+      : `Publish failed (${publishMetadata.destinationLabel})`
+    : "Not published yet"
+  const publishTimestamp = publishMetadata
+    ? new Date(publishMetadata.attemptedAt).toLocaleString()
+    : null
 
   return (
     <div className="flex h-full flex-col">
       <div className="flex-1 overflow-y-auto px-1.5 py-2">
+        <div className="mb-2 rounded-md border border-border bg-background px-3 py-2.5">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+            Slack Delivery
+          </p>
+          <p
+            className={`mt-1 text-sm ${
+              publishMetadata?.status === "failed" ? "text-red-500" : "text-foreground/85"
+            }`}
+          >
+            {publishLabel}
+          </p>
+          {publishTimestamp && (
+            <p className="mt-0.5 text-xs text-muted-foreground">{publishTimestamp}</p>
+          )}
+        </div>
         {sources.map((source) => {
           const isExpanded = expandedId === source.id
           const hasExpandable = source.type === "amplitude" && source.charts && source.charts.length > 0
@@ -149,10 +178,17 @@ export function SourcesPanel({ sources, onRefreshSource }: SourcesPanelProps) {
                 </div>
               )}
 
-              {/* Stale warning */}
-              {source.error && (
+              {/* Notice / warnings */}
+              {source.notice && (
                 <div className="ml-[42px] mr-3 mb-1 px-3">
                   <span className="text-xs text-amber-500">
+                    {source.notice}
+                  </span>
+                </div>
+              )}
+              {source.error && (
+                <div className="ml-[42px] mr-3 mb-1 px-3">
+                  <span className="text-xs text-red-500">
                     {source.error}
                   </span>
                 </div>
