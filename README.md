@@ -45,6 +45,14 @@ Open:
 
 ## Environment
 
+Required for report generation (ADK + Gemini runtime):
+
+- `ADK_RUNTIME_URL`
+- `GEMINI_API_KEY`
+- `GEMINI_MODEL` (default: `gemini-3-flash-preview`)
+
+If the ADK runtime is unavailable or returns an error, draft generation fails fast. There is no deterministic synthesis fallback in the active path.
+
 Required for real Slack publish:
 
 - `SLACK_WEBHOOK_URL`

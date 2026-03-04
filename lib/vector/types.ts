@@ -62,6 +62,7 @@ export interface IngestRunRecord {
 }
 
 export type CompletionSignalStatus = "success" | "partial" | "blocked"
+export type RuntimeBackend = "adk_gemini"
 
 export interface CompletionSignal {
   status: CompletionSignalStatus
@@ -102,6 +103,8 @@ export interface ReportRunMetadata {
   runId: string
   generatedAt: string
   completion: CompletionSignal
+  backend: RuntimeBackend
+  model: string
   runtimeContext: RuntimeContextPayload
   promptSnapshot: string
   traceId: string

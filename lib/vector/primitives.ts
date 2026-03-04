@@ -1,6 +1,6 @@
+import { synthesizeViaAgentRuntime } from "@/lib/vector/agent-runtime-client"
 import { buildRuntimeContextPayload, buildPromptSnapshot } from "@/lib/vector/runtime"
 import { readVectorState, writeVectorState } from "@/lib/vector/store"
-import { synthesizeReportDraft } from "@/lib/vector/synthesis"
 import { isoNow } from "@/lib/vector/time"
 import type {
   EvidenceResolution,
@@ -17,7 +17,11 @@ export async function writeReportDraftPrimitive(): Promise<{
   const runtimeContext = buildRuntimeContextPayload(state)
   const promptSnapshot = buildPromptSnapshot(runtimeContext)
 
-  const synthesis = synthesizeReportDraft(state, runtimeContext)
+  const synthesis = await synthesizeViaAgentRuntime({
+    state,
+    runtimeContext,
+    promptSnapshot,
+  })
   const traceId = `trace-${Date.now()}`
   const runId = state.runs[state.runs.length - 1]?.id ?? `run-synthesis-${Date.now()}`
 
@@ -40,6 +44,8 @@ export async function writeReportDraftPrimitive(): Promise<{
       runId,
       generatedAt: isoNow(),
       completion: synthesis.completion,
+      backend: synthesis.backend,
+      model: synthesis.model,
       runtimeContext,
       promptSnapshot,
       traceId,

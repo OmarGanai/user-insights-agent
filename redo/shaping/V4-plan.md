@@ -18,6 +18,7 @@ Finalize Slack preview/publish fidelity and distribution packaging for a public,
 - Real publish action via configured Slack webhook destination
 - Publish metadata persistence and UI visibility
 - Public setup docs + `.env.example` + deploy instructions/demo URL
+- Runtime-proof and config-proof CI gates for ADK+Gemini path
 - Optional bot-token channel-selection seam (explicitly non-MVP)
 
 ## Scope Out
@@ -32,15 +33,18 @@ Finalize Slack preview/publish fidelity and distribution packaging for a public,
 - [x] Implement `post_slack_message` webhook publish with robust error handling.
 - [x] Persist publish metadata (timestamp, destination label, success/failure) on shared artifact.
 - [x] Surface publish metadata in UI (sources/report context).
-- [x] Add webhook configuration and required secrets to `.env.example` and setup docs.
+- [ ] Add ADK+Gemini runtime configuration (`ADK_RUNTIME_URL`, `GEMINI_API_KEY`, `GEMINI_MODEL`) to `.env.example` and setup docs.
 - [x] Document optional bot-token path (`chat.postMessage`) as future mode only.
 - [x] Run end-to-end test that compares preview payload and published payload equivalence.
+- [ ] Ensure publish path operates on artifacts generated from ADK runtime (no deterministic synthesis fallback in active path).
+- [ ] Add CI runtime-proof and config-parity gates to block checklist drift.
 
 ## Verification
 
 - [x] Preview payload and published payload are equivalent for the same artifact.
 - [x] Publish success and failure states are clear to user.
-- [x] External reviewer can run project locally from docs and environment template.
+- [ ] External reviewer can run project locally from docs and environment template including ADK+Gemini runtime prerequisites.
+- [ ] Runtime-proof CI gates pass on pull requests.
 - [ ] Live demo URL is published and documented.
 
 ## Demo Script
@@ -53,7 +57,7 @@ Finalize Slack preview/publish fidelity and distribution packaging for a public,
 
 ## Exit Criteria
 
-- V4 closes B6/B9 and satisfies demo packaging requirements for the weekend public release.
+- V4 closes B6/B9 and satisfies demo packaging requirements with ADK+Gemini runtime guardrails enforced in CI.
 
 ## Post-MVP Deferred Follow-Ups
 

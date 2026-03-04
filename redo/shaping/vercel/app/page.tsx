@@ -58,6 +58,8 @@ export default function Home() {
         summary: "Prototype artifact",
         completedAt: seededNow,
       },
+      backend: "adk_gemini",
+      model: "gemini-3-flash-preview",
       runtimeContext: {
         sourceInventory: [],
         capabilityMap: [],

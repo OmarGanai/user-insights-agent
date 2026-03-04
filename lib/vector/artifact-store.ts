@@ -30,6 +30,8 @@ function createInitialArtifact(): ReportArtifact {
         summary: "Seeded artifact initialized for compatibility paths.",
         completedAt: now,
       },
+      backend: "adk_gemini",
+      model: "gemini-3-flash-preview",
       runtimeContext: {
         sourceInventory: [],
         capabilityMap: [],

@@ -187,8 +187,10 @@ The UX/UI baseline comes from the Vercel prototype at `redo/shaping/vercel`.
 - Preserve shared artifact model as system boundary across slices.
 - Every new UI action must have an explicit agent-tool equivalent before slice close.
 - Apply the R7 rubric from `redo/shaping/spike-r7-results-ux-rubic-shape-b.md` at each slice that changes UI.
+- Runtime-constrained requirements require runtime-proof evidence before checklist close (test and trace must prove `backend=adk_gemini` when ADK+Gemini is required).
 - 🟡 Agent loops must terminate using explicit `complete_task` semantics; do not use heuristic completion detection.
 - 🟡 Tooling stays primitive-first across slices; workflow tools are optional wrappers, not capability gates.
+- No deterministic synthesis fallback is allowed in active generation paths for ADK+Gemini-constrained slices.
 
 ## Post-MVP Deferred Architecture Items (After Core Flow Works)
 

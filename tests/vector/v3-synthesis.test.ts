@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test"
 import { promises as fs } from "node:fs"
 import path from "node:path"
 import { refreshSources } from "@/lib/vector/ingest"
-import { resetVectorStateForTests } from "@/lib/vector/store"
+import { buildRuntimeContextPayload } from "@/lib/vector/runtime"
+import { synthesizeReportDraft } from "@/lib/vector/synthesis"
+import { readVectorState, resetVectorStateForTests } from "@/lib/vector/store"
 import {
   getEvidenceForClaim,
   getLatestTrace,
@@ -12,6 +14,19 @@ import {
 } from "@/lib/vector/workflows"
 
 const TEST_DIR = path.join(process.cwd(), ".tmp-vector-tests", "v3")
+const MOCK_RUNTIME_URL = "http://adk-runtime.test"
+const ORIGINAL_FETCH = globalThis.fetch
+
+async function mockRuntimePayload() {
+  const state = await readVectorState()
+  const runtimeContext = buildRuntimeContextPayload(state)
+  const synthesis = synthesizeReportDraft(state, runtimeContext)
+  return {
+    ...synthesis,
+    backend: "adk_gemini" as const,
+    model: process.env.GEMINI_MODEL ?? "gemini-3-flash-preview",
+  }
+}
 
 async function resetEnvAndState() {
   process.env.VECTOR_DATA_DIR = TEST_DIR
@@ -21,6 +36,9 @@ async function resetEnvAndState() {
   delete process.env.TYPEFORM_API_KEY
   delete process.env.TYPEFORM_FORM_ID
   delete process.env.IOS_APP_ID
+  process.env.ADK_RUNTIME_URL = MOCK_RUNTIME_URL
+  process.env.GEMINI_API_KEY = "test-gemini-key"
+  process.env.GEMINI_MODEL = "gemini-3-flash-preview"
   await fs.rm(TEST_DIR, { recursive: true, force: true })
   await resetVectorStateForTests()
 }
@@ -28,10 +46,34 @@ async function resetEnvAndState() {
 describe("V3 synthesis artifact and evidence trace", () => {
   beforeEach(async () => {
     await resetEnvAndState()
+    globalThis.fetch = (async (input: unknown, init?: RequestInit) => {
+      const url =
+        typeof input === "string"
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : typeof input === "object" && input && "url" in input
+              ? String((input as { url: string }).url)
+              : ""
+
+      if (url === `${MOCK_RUNTIME_URL}/synthesize`) {
+        const payload = await mockRuntimePayload()
+        return new Response(JSON.stringify(payload), {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        })
+      }
+
+      return ORIGINAL_FETCH(input as RequestInfo | URL, init)
+    }) as typeof fetch
     await refreshSources()
   })
 
   afterEach(async () => {
+    globalThis.fetch = ORIGINAL_FETCH
+    delete process.env.ADK_RUNTIME_URL
+    delete process.env.GEMINI_API_KEY
+    delete process.env.GEMINI_MODEL
     await fs.rm(TEST_DIR, { recursive: true, force: true })
   })
 
@@ -46,6 +88,8 @@ describe("V3 synthesis artifact and evidence trace", () => {
 
     expect(artifact.runMetadata.completion.status).toBe("success")
     expect(artifact.runMetadata.completion.summary.length).toBeGreaterThan(0)
+    expect(artifact.runMetadata.backend).toBe("adk_gemini")
+    expect(artifact.runMetadata.model).toBe("gemini-3-flash-preview")
 
     expect(Object.keys(artifact.evidenceMap).length).toBeGreaterThan(0)
     expect(trace.steps.some((step) => step.id === "step-complete-task")).toBe(true)
@@ -80,5 +124,10 @@ describe("V3 synthesis artifact and evidence trace", () => {
     expect(trace).not.toBeNull()
     expect(trace?.steps.length).toBeGreaterThan(0)
     expect(trace?.promptSnapshot).toContain("Capability map")
+  })
+
+  test("write_report_draft fails fast when ADK runtime config is missing", async () => {
+    delete process.env.ADK_RUNTIME_URL
+    await expect(writeReportDraft()).rejects.toThrow("ADK_RUNTIME_URL")
   })
 })
