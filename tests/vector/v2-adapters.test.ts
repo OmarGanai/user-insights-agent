@@ -14,6 +14,9 @@ async function resetEnvAndState() {
   delete process.env.AMPLITUDE_API_KEY
   delete process.env.AMPLITUDE_SECRET_KEY
   delete process.env.AMPLITUDE_CHART_IDS
+  delete process.env.AMPLITUDE_MAX_ATTEMPTS
+  delete process.env.AMPLITUDE_RETRY_BASE_DELAY_MS
+  delete process.env.AMPLITUDE_INTER_REQUEST_DELAY_MS
   delete process.env.TYPEFORM_API_KEY
   delete process.env.TYPEFORM_FORM_ID
   delete process.env.IOS_APP_ID
@@ -36,6 +39,88 @@ describe("V2 adapters and source status transitions", () => {
     expect(result.snapshot.sourceKey).toBe("amplitude")
     expect(result.snapshot.data.charts.length).toBeGreaterThan(0)
     expect(result.caveat).toContain("Using seeded Amplitude data")
+  })
+
+  test("fetch_amplitude adapter runs live chart queries sequentially", async () => {
+    process.env.AMPLITUDE_API_KEY = "test-key"
+    process.env.AMPLITUDE_SECRET_KEY = "test-secret"
+    process.env.AMPLITUDE_CHART_IDS = "chart-a,chart-b,chart-c"
+    process.env.AMPLITUDE_MAX_ATTEMPTS = "1"
+    process.env.AMPLITUDE_INTER_REQUEST_DELAY_MS = "0"
+
+    let inFlight = 0
+    let maxInFlight = 0
+
+    const result = await fetchAmplitude({
+      runId: "run-v2-sequential",
+      fetchImpl: async (input) => {
+        const url = String(input)
+        inFlight += 1
+        maxInFlight = Math.max(maxInFlight, inFlight)
+        await new Promise((resolve) => setTimeout(resolve, 2))
+        inFlight -= 1
+
+        const chartId = url.split("/chart/")[1]?.split("/")[0] ?? "unknown"
+        return new Response(
+          JSON.stringify({
+            chart: { name: chartId, chart_type: "segmentation" },
+            series: [1, 2, 3],
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        )
+      },
+    })
+
+    expect(maxInFlight).toBe(1)
+    expect(result.snapshot.data.charts.length).toBe(3)
+    expect(result.caveat).toBeNull()
+  })
+
+  test("fetch_amplitude adapter retries 429 and returns partial live results", async () => {
+    process.env.AMPLITUDE_API_KEY = "test-key"
+    process.env.AMPLITUDE_SECRET_KEY = "test-secret"
+    process.env.AMPLITUDE_CHART_IDS = "chart-retry,chart-fail"
+    process.env.AMPLITUDE_MAX_ATTEMPTS = "3"
+    process.env.AMPLITUDE_RETRY_BASE_DELAY_MS = "1"
+    process.env.AMPLITUDE_INTER_REQUEST_DELAY_MS = "0"
+
+    let retryAttempts = 0
+
+    const result = await fetchAmplitude({
+      runId: "run-v2-retry",
+      fetchImpl: async (input) => {
+        const url = String(input)
+        const chartId = url.split("/chart/")[1]?.split("/")[0] ?? "unknown"
+
+        if (chartId === "chart-retry") {
+          retryAttempts += 1
+          if (retryAttempts < 3) {
+            return new Response(
+              JSON.stringify({ error: { message: "Too many requests" } }),
+              { status: 429, headers: { "Content-Type": "application/json" } }
+            )
+          }
+
+          return new Response(
+            JSON.stringify({
+              chart: { name: "retry chart", chart_type: "segmentation" },
+              series: [1, 2],
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          )
+        }
+
+        return new Response(
+          JSON.stringify({ error: { message: "Too many requests" } }),
+          { status: 429, headers: { "Content-Type": "application/json" } }
+        )
+      },
+    })
+
+    expect(retryAttempts).toBe(3)
+    expect(result.snapshot.data.charts.length).toBe(1)
+    expect(result.caveat).toContain("Partial Amplitude ingest")
+    expect(result.caveat).toContain("chart-fail")
   })
 
   test("fetch_typeform adapter emits delayed-response caveat for recent window", async () => {
@@ -85,6 +170,7 @@ describe("V2 adapters and source status transitions", () => {
     })
 
     expect(result.statusIndex.typeform.status).toBe("error")
+    expect(result.statusIndex.typeform.caveat).toBeNull()
     const amplitude = result.sourceInventory.find((source) => source.id === "src-amplitude")
     expect(amplitude?.status).toBe("synced")
     expect(amplitude?.lastSync).not.toBe("Never")

@@ -25,6 +25,7 @@ export const DEFAULT_VECTOR_DATA_DIR = ".vector-data"
 export const PRODUCT_CONTEXT_FILE = "data/vector/product-context.md"
 export const COMPANY_CONTEXT_FILE = "data/vector/company-context.md"
 export const IOS_RELEASE_NOTES_FILE = "data/vector/ios-release-notes.md"
+export const IOS_RELEASE_NOTES_YAML_FILE = "data/vector/ios-release-notes.yaml"
 
 const keyById = new Map<VectorSourceId, VectorSourceKey>(
   SOURCE_DEFINITIONS.map((source) => [source.id, source.key])

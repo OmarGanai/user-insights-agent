@@ -25,6 +25,17 @@ interface SynthesizeViaRuntimeArgs {
   promptSnapshot: string
 }
 
+const REQUIRED_SECTION_IDS = [
+  "sec-summary",
+  "sec-metrics",
+  "sec-feedback",
+  "sec-releases",
+  "sec-hypotheses",
+  "sec-recommendations",
+] as const
+
+const REQUIRED_TRACE_STEP_IDS = ["step-synthesize", "step-complete-task"] as const
+
 export class AgentRuntimeError extends Error {
   constructor(
     message: string,
@@ -48,6 +59,15 @@ function synthesizeEndpoint(baseUrl: string): string {
   return new URL("synthesize", normalizedBase).toString()
 }
 
+function isIso8601Timestamp(value: string): boolean {
+  if (!value.includes("T")) {
+    return false
+  }
+
+  const parsed = Date.parse(value)
+  return Number.isFinite(parsed)
+}
+
 function assertRuntimePayload(payload: unknown): AgentRuntimeSynthesisPayload {
   if (!payload || typeof payload !== "object") {
     throw new AgentRuntimeError("ADK runtime returned invalid payload (expected object).")
@@ -59,12 +79,25 @@ function assertRuntimePayload(payload: unknown): AgentRuntimeSynthesisPayload {
     throw new AgentRuntimeError("ADK runtime returned non-ADK backend response.")
   }
 
-  if (typeof candidate.model !== "string" || candidate.model.length === 0) {
+  if (typeof candidate.model !== "string" || candidate.model.trim().length === 0) {
     throw new AgentRuntimeError("ADK runtime payload is missing model metadata.")
   }
 
   if (!Array.isArray(candidate.sections)) {
     throw new AgentRuntimeError("ADK runtime payload is missing sections.")
+  }
+  const sectionIds = new Set(
+    candidate.sections.map((section) =>
+      section && typeof section === "object" && "id" in section && typeof section.id === "string"
+        ? section.id
+        : ""
+    )
+  )
+  const missingSectionIds = REQUIRED_SECTION_IDS.filter((sectionId) => !sectionIds.has(sectionId))
+  if (missingSectionIds.length > 0) {
+    throw new AgentRuntimeError(
+      `ADK runtime payload is missing required section ids: ${missingSectionIds.join(", ")}.`
+    )
   }
 
   if (!Array.isArray(candidate.hypotheses) || !Array.isArray(candidate.recommendations)) {
@@ -97,16 +130,30 @@ function assertRuntimePayload(payload: unknown): AgentRuntimeSynthesisPayload {
   ) {
     throw new AgentRuntimeError("ADK runtime payload is missing completion timestamp.")
   }
+  if (!isIso8601Timestamp(candidate.completion.completedAt)) {
+    throw new AgentRuntimeError("ADK runtime payload completion timestamp must be ISO-8601.")
+  }
 
   if (!Array.isArray(candidate.traceSteps)) {
     throw new AgentRuntimeError("ADK runtime payload is missing trace steps.")
+  }
+  const traceStepIds = new Set(
+    candidate.traceSteps.map((step) =>
+      step && typeof step === "object" && "id" in step && typeof step.id === "string" ? step.id : ""
+    )
+  )
+  const missingTraceStepIds = REQUIRED_TRACE_STEP_IDS.filter((stepId) => !traceStepIds.has(stepId))
+  if (missingTraceStepIds.length > 0) {
+    throw new AgentRuntimeError(
+      `ADK runtime payload is missing required trace steps: ${missingTraceStepIds.join(", ")}.`
+    )
   }
 
   if (!candidate.evidenceMap || typeof candidate.evidenceMap !== "object") {
     throw new AgentRuntimeError("ADK runtime payload is missing evidence map.")
   }
 
-  if (typeof candidate.periodLabel !== "string" || candidate.periodLabel.length === 0) {
+  if (typeof candidate.periodLabel !== "string" || candidate.periodLabel.trim().length === 0) {
     throw new AgentRuntimeError("ADK runtime payload is missing period label.")
   }
 

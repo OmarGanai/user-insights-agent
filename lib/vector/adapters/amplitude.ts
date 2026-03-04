@@ -24,6 +24,57 @@ export interface AdapterResult<TData> {
   caveat?: string | null
 }
 
+const DEFAULT_AMPLITUDE_MAX_ATTEMPTS = 3
+const DEFAULT_AMPLITUDE_RETRY_BASE_DELAY_MS = 1000
+const DEFAULT_AMPLITUDE_INTER_REQUEST_DELAY_MS = 350
+
+class AmplitudeApiError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly retryAfterMs: number | null = null
+  ) {
+    super(message)
+    this.name = "AmplitudeApiError"
+  }
+}
+
+function readPositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name]
+  if (!raw) {
+    return fallback
+  }
+
+  const parsed = Number.parseInt(raw, 10)
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return fallback
+  }
+
+  return parsed
+}
+
+function parseRetryAfterMs(value: string | null): number | null {
+  if (!value) {
+    return null
+  }
+
+  const asSeconds = Number.parseInt(value, 10)
+  if (Number.isFinite(asSeconds) && asSeconds >= 0) {
+    return asSeconds * 1000
+  }
+
+  const asDate = Date.parse(value)
+  if (Number.isFinite(asDate)) {
+    return Math.max(0, asDate - Date.now())
+  }
+
+  return null
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
 function countDataPoints(value: unknown): number {
   if (Array.isArray(value)) {
     return value.reduce((acc, item) => acc + countDataPoints(item), 0)
@@ -69,7 +120,11 @@ async function fetchChartFromAmplitude(
 
   if (!response.ok) {
     const body = await response.text()
-    throw new Error(`Amplitude chart ${chartId} failed (${response.status}): ${body || "unknown"}`)
+    throw new AmplitudeApiError(
+      `Amplitude chart ${chartId} failed (${response.status}): ${body || "unknown"}`,
+      response.status,
+      parseRetryAfterMs(response.headers.get("retry-after"))
+    )
   }
 
   const payload = (await response.json()) as Record<string, unknown>
@@ -85,6 +140,51 @@ async function fetchChartFromAmplitude(
     url: typeof chart.url === "string" ? chart.url : undefined,
     lastUpdated: isoNow(),
   }
+}
+
+function isRetryableAmplitudeStatus(status: number): boolean {
+  return status === 429 || status >= 500
+}
+
+function retryDelayMs(error: AmplitudeApiError, attempt: number, baseDelayMs: number): number {
+  if (error.retryAfterMs !== null) {
+    return error.retryAfterMs
+  }
+
+  const exponential = baseDelayMs * Math.max(1, 2 ** (attempt - 1))
+  const jitter = Math.floor(Math.random() * 200)
+  return exponential + jitter
+}
+
+async function fetchChartWithRetry(
+  chartId: string,
+  fetchImpl: typeof fetch,
+  authHeader: string,
+  maxAttempts: number,
+  baseDelayMs: number
+): Promise<AmplitudeChartSnapshot> {
+  let lastError: unknown = null
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      return await fetchChartFromAmplitude(chartId, fetchImpl, authHeader)
+    } catch (error) {
+      lastError = error
+      if (!(error instanceof AmplitudeApiError)) {
+        throw error
+      }
+
+      if (!isRetryableAmplitudeStatus(error.status) || attempt === maxAttempts) {
+        throw error
+      }
+
+      await sleep(retryDelayMs(error, attempt, baseDelayMs))
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error(`Amplitude chart ${chartId} failed with unknown retry error.`)
 }
 
 /**
@@ -114,8 +214,20 @@ export async function fetchAmplitude(
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean)
+  const maxAttempts = Math.max(
+    1,
+    readPositiveIntEnv("AMPLITUDE_MAX_ATTEMPTS", DEFAULT_AMPLITUDE_MAX_ATTEMPTS)
+  )
+  const baseDelayMs = readPositiveIntEnv(
+    "AMPLITUDE_RETRY_BASE_DELAY_MS",
+    DEFAULT_AMPLITUDE_RETRY_BASE_DELAY_MS
+  )
+  const interRequestDelayMs = readPositiveIntEnv(
+    "AMPLITUDE_INTER_REQUEST_DELAY_MS",
+    DEFAULT_AMPLITUDE_INTER_REQUEST_DELAY_MS
+  )
 
-  let charts: AmplitudeChartSnapshot[]
+  let charts: AmplitudeChartSnapshot[] = []
   let caveat: string | null = null
 
   if (!apiKey || !secret || chartIds.length === 0) {
@@ -123,9 +235,45 @@ export async function fetchAmplitude(
     caveat = "Using seeded Amplitude data. Configure AMPLITUDE_API_KEY, AMPLITUDE_SECRET_KEY, and AMPLITUDE_CHART_IDS for live ingest."
   } else {
     const authHeader = `Basic ${Buffer.from(`${apiKey}:${secret}`).toString("base64")}`
-    charts = await Promise.all(
-      chartIds.map((chartId) => fetchChartFromAmplitude(chartId, fetchImpl, authHeader))
-    )
+    const failedChartIds: string[] = []
+    const failureReasons: string[] = []
+
+    for (let index = 0; index < chartIds.length; index += 1) {
+      const chartId = chartIds[index]
+
+      try {
+        const chart = await fetchChartWithRetry(
+          chartId,
+          fetchImpl,
+          authHeader,
+          maxAttempts,
+          baseDelayMs
+        )
+        charts.push(chart)
+      } catch (error) {
+        failedChartIds.push(chartId)
+        if (error instanceof Error) {
+          failureReasons.push(error.message)
+        }
+      }
+
+      if (index < chartIds.length - 1 && interRequestDelayMs > 0) {
+        await sleep(interRequestDelayMs)
+      }
+    }
+
+    if (charts.length === 0) {
+      const reason = failureReasons[0] ?? "All chart queries failed."
+      throw new Error(
+        `Amplitude ingest failed for all charts (${chartIds.length} requested). ${reason}`
+      )
+    }
+
+    if (failedChartIds.length > 0) {
+      caveat =
+        `Partial Amplitude ingest (${charts.length}/${chartIds.length} charts). ` +
+        `Failed chart ids: ${failedChartIds.join(", ")}.`
+    }
   }
 
   const capturedAt = isoNow()

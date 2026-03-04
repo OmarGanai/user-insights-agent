@@ -143,6 +143,7 @@ export async function refreshSources(options: IngestOptions = {}): Promise<Inges
         status: "error",
         latestRunId: runId,
         error: message,
+        caveat: null,
       }
       statusBySource[sourceKey] = "error"
     }

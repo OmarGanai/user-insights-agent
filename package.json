@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "guard:runtime": "node scripts/ci-runtime-guard.mjs",
     "test:vector": "bun test tests/vector",
-    "test:e2e:payload-equivalence": "node scripts/test-preview-publish-equivalence.mjs"
+    "test:e2e:payload-equivalence": "node scripts/test-preview-publish-equivalence.mjs",
+    "test:e2e:amplitude-refresh": "node scripts/test-amplitude-refresh.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

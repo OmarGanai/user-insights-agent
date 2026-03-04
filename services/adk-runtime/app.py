@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
+from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
@@ -110,6 +112,7 @@ class SynthesizeResponse(BaseModel):
 
 app = FastAPI(title="Vector ADK Runtime", version="0.1.0")
 session_service = InMemorySessionService()
+logger = logging.getLogger(__name__)
 
 
 def required_env(name: str) -> str:
@@ -124,8 +127,8 @@ def strip_markdown_fences(raw_text: str) -> str:
     if not text.startswith("```"):
         return text
 
-    cleaned = re.sub(r"^```(?:json)?\\s*", "", text, flags=re.IGNORECASE)
-    cleaned = re.sub(r"\\s*```$", "", cleaned)
+    cleaned = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s*```$", "", cleaned)
     return cleaned.strip()
 
 
@@ -137,7 +140,10 @@ def parse_json_object(raw_text: str) -> dict[str, Any]:
         match = re.search(r"\{.*\}", cleaned, re.DOTALL)
         if not match:
             raise HTTPException(status_code=502, detail="Gemini response did not contain JSON.")
-        parsed = json.loads(match.group(0))
+        try:
+            parsed = json.loads(match.group(0))
+        except json.JSONDecodeError as exc:
+            raise HTTPException(status_code=502, detail="Gemini response JSON parsing failed.") from exc
 
     if not isinstance(parsed, dict):
         raise HTTPException(status_code=502, detail="Gemini JSON payload must be an object.")
@@ -149,7 +155,7 @@ def validate_contract(payload: SynthesizeResponse) -> None:
     if payload.backend != "adk_gemini":
         raise HTTPException(status_code=502, detail="Runtime payload backend must be adk_gemini.")
 
-    if not payload.model:
+    if not payload.model.strip():
         raise HTTPException(status_code=502, detail="Runtime payload must include model metadata.")
 
     if payload.completion.status not in {"success", "partial", "blocked"}:
@@ -157,6 +163,17 @@ def validate_contract(payload: SynthesizeResponse) -> None:
             status_code=502,
             detail="Runtime completion.status must be one of success|partial|blocked.",
         )
+    if not payload.completion.summary.strip():
+        raise HTTPException(status_code=502, detail="Runtime completion.summary cannot be empty.")
+    if "T" not in payload.completion.completedAt:
+        raise HTTPException(status_code=502, detail="Runtime completion.completedAt must be ISO-8601.")
+    try:
+        datetime.fromisoformat(payload.completion.completedAt.replace("Z", "+00:00"))
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Runtime completion.completedAt must be ISO-8601.",
+        ) from exc
 
     required_section_ids = {
         "sec-summary",
@@ -172,6 +189,15 @@ def validate_contract(payload: SynthesizeResponse) -> None:
         raise HTTPException(
             status_code=502,
             detail=f"Runtime payload missing required section ids: {', '.join(missing)}",
+        )
+
+    required_trace_ids = {"step-synthesize", "step-complete-task"}
+    actual_trace_ids = {step.id for step in payload.traceSteps}
+    missing_trace_ids = sorted(required_trace_ids - actual_trace_ids)
+    if missing_trace_ids:
+        raise HTTPException(
+            status_code=502,
+            detail=f"Runtime payload missing required trace ids: {', '.join(missing_trace_ids)}",
         )
 
 
@@ -345,13 +371,22 @@ async def synthesize(
             detail="Request model must match configured GEMINI_MODEL.",
         )
 
-    prompt = build_prompt(request, runtime_model)
-    raw_text = await run_adk_synthesis(prompt=prompt, model_name=runtime_model, gemini_api_key=gemini_api_key)
-    parsed = parse_json_object(raw_text)
+    try:
+        prompt = build_prompt(request, runtime_model)
+        raw_text = await run_adk_synthesis(prompt=prompt, model_name=runtime_model, gemini_api_key=gemini_api_key)
+        parsed = parse_json_object(raw_text)
 
-    parsed["backend"] = "adk_gemini"
-    parsed["model"] = runtime_model
+        parsed["backend"] = "adk_gemini"
+        parsed["model"] = runtime_model
 
-    payload = SynthesizeResponse(**parsed)
-    validate_contract(payload)
-    return payload
+        payload = SynthesizeResponse(**parsed)
+        validate_contract(payload)
+        return payload
+    except HTTPException:
+        raise
+    except Exception as exc:  # pragma: no cover - defensive guard for upstream SDK/runtime failures
+        logger.exception("ADK runtime synthesis failed")
+        raise HTTPException(
+            status_code=502,
+            detail=f"ADK synthesis upstream failure: {type(exc).__name__}: {exc}",
+        ) from exc

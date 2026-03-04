@@ -1,7 +1,11 @@
 import { promises as fs } from "node:fs"
 import path from "node:path"
 import { MOCK_SOURCES } from "@/lib/mock-data"
-import { IOS_RELEASE_NOTES_FILE, sourceIdFromKey } from "@/lib/vector/constants"
+import {
+  IOS_RELEASE_NOTES_FILE,
+  IOS_RELEASE_NOTES_YAML_FILE,
+  sourceIdFromKey,
+} from "@/lib/vector/constants"
 import { isoNow } from "@/lib/vector/time"
 import type { NormalizedSourceSnapshot } from "@/lib/vector/types"
 import type { AdapterResult } from "@/lib/vector/adapters/amplitude"
@@ -24,8 +28,20 @@ export interface FetchIosReleaseOptions {
 }
 
 async function readReleaseNotesFile(): Promise<string> {
-  const absolutePath = path.join(process.cwd(), IOS_RELEASE_NOTES_FILE)
-  return fs.readFile(absolutePath, "utf8")
+  const yamlPath = path.join(process.cwd(), IOS_RELEASE_NOTES_YAML_FILE)
+  const markdownPath = path.join(process.cwd(), IOS_RELEASE_NOTES_FILE)
+
+  try {
+    const yaml = await fs.readFile(yamlPath, "utf8")
+    if (yaml.trim().length > 0) {
+      // Preserve YAML source while keeping downstream markdown-oriented field shape.
+      return ["```yaml", yaml.trim(), "```"].join("\n")
+    }
+  } catch {
+    // Ignore missing YAML and try markdown fallback.
+  }
+
+  return fs.readFile(markdownPath, "utf8")
 }
 
 async function fetchItunesLookupMetadata(
@@ -54,7 +70,7 @@ async function fetchItunesLookupMetadata(
  * iOS release adapter
  *
  * Merge behavior:
- * - Reads curated markdown release notes via `readReleaseNotesFile`.
+ * - Reads curated release notes via `readReleaseNotesFile` (YAML preferred, markdown fallback).
  * - Enriches with Apple Lookup metadata via `fetch_itunes_lookup_metadata` when `IOS_APP_ID` is set.
  * - Produces one normalized snapshot containing both local notes and lookup metadata.
  */

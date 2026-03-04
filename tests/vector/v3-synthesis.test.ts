@@ -25,6 +25,8 @@ interface RuntimeRequestCapture {
 interface BuildRuntimePayloadOptions {
   completionStatus?: CompletionStatus | string
   completionSummary?: string
+  completionCompletedAt?: string
+  includeCompleteTaskTraceStep?: boolean
   backend?: string
   model?: string
 }
@@ -36,8 +38,10 @@ function buildRuntimePayload(options: BuildRuntimePayloadOptions = {}): Record<s
   const completionStatus = options.completionStatus ?? "success"
   const completionSummary =
     options.completionSummary ?? "Runtime synthesis completed with full source coverage."
+  const completionCompletedAt = options.completionCompletedAt ?? "2026-03-03T12:00:00.000Z"
   const completionStepStatus =
     completionStatus === "blocked" ? "error" : completionStatus === "partial" ? "running" : "complete"
+  const includeCompleteTaskTraceStep = options.includeCompleteTaskTraceStep ?? true
 
   const sharedEvidence = {
     id: "ev-runtime-1",
@@ -129,7 +133,7 @@ function buildRuntimePayload(options: BuildRuntimePayloadOptions = {}): Record<s
     completion: {
       status: completionStatus,
       summary: completionSummary,
-      completedAt: "2026-03-03T12:00:00.000Z",
+      completedAt: completionCompletedAt,
     },
     traceSteps: [
       {
@@ -138,13 +142,17 @@ function buildRuntimePayload(options: BuildRuntimePayloadOptions = {}): Record<s
         status: "complete",
         detail: "ADK runtime generated sections and recommendations.",
       },
-      {
-        id: "step-complete-task",
-        name: "complete_task",
-        status: completionStepStatus,
-        detail: `complete_task status=${completionStatus}`,
-        outputPreview: completionSummary,
-      },
+      ...(includeCompleteTaskTraceStep
+        ? [
+            {
+              id: "step-complete-task",
+              name: "complete_task",
+              status: completionStepStatus,
+              detail: `complete_task status=${completionStatus}`,
+              outputPreview: completionSummary,
+            },
+          ]
+        : []),
     ],
     backend: options.backend ?? "adk_gemini",
     model: options.model ?? (process.env.GEMINI_MODEL ?? "gemini-3-flash-preview"),
@@ -315,6 +323,18 @@ describe("V3 synthesis artifact and evidence trace", () => {
     runtimePayloadFactory = () => buildRuntimePayload({ completionStatus: "completed" })
 
     await expect(writeReportDraft()).rejects.toThrow("invalid completion status")
+  })
+
+  test("completion contract gate rejects invalid completion timestamp", async () => {
+    runtimePayloadFactory = () => buildRuntimePayload({ completionCompletedAt: "2026-03-03" })
+
+    await expect(writeReportDraft()).rejects.toThrow("timestamp must be ISO-8601")
+  })
+
+  test("completion contract gate rejects missing complete_task trace step", async () => {
+    runtimePayloadFactory = () => buildRuntimePayload({ includeCompleteTaskTraceStep: false })
+
+    await expect(writeReportDraft()).rejects.toThrow("missing required trace steps")
   })
 
   test("update_report_section persists edits across reads", async () => {
