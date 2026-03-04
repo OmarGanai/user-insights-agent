@@ -75,6 +75,29 @@ function assertRuntimePayload(payload: unknown): AgentRuntimeSynthesisPayload {
     throw new AgentRuntimeError("ADK runtime payload is missing completion signal.")
   }
 
+  if (
+    typeof candidate.completion.status !== "string" ||
+    !["success", "partial", "blocked"].includes(candidate.completion.status)
+  ) {
+    throw new AgentRuntimeError(
+      "ADK runtime payload has invalid completion status (expected success|partial|blocked)."
+    )
+  }
+
+  if (
+    typeof candidate.completion.summary !== "string" ||
+    candidate.completion.summary.trim().length === 0
+  ) {
+    throw new AgentRuntimeError("ADK runtime payload is missing completion summary.")
+  }
+
+  if (
+    typeof candidate.completion.completedAt !== "string" ||
+    candidate.completion.completedAt.trim().length === 0
+  ) {
+    throw new AgentRuntimeError("ADK runtime payload is missing completion timestamp.")
+  }
+
   if (!Array.isArray(candidate.traceSteps)) {
     throw new AgentRuntimeError("ADK runtime payload is missing trace steps.")
   }

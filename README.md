@@ -43,6 +43,22 @@ Open:
 
 - `http://localhost:3000`
 
+## Run ADK Runtime Service (Required for Draft Generation)
+
+Run this in a separate terminal:
+
+```bash
+cd /Users/omarganai/Coding/user-insights-agent/services/adk-runtime
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export GEMINI_API_KEY=\"<your-gemini-api-key>\"
+export GEMINI_MODEL=\"gemini-3-flash-preview\"
+uvicorn app:app --host 127.0.0.1 --port 8081 --reload
+```
+
+Then set `ADK_RUNTIME_URL=http://127.0.0.1:8081` in `.env` for the Next.js app.
+
 ## Environment
 
 Required for report generation (ADK + Gemini runtime):
