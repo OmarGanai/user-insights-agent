@@ -34,6 +34,8 @@ archive/legacy-agent/workspace/
 # Runtime artifacts
 tmp/
 workspace/
+.vector-data/
+.tmp-vector-tests/
 
 # Local scratch
 *.log

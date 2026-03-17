@@ -17,6 +17,7 @@ export interface Source {
   lastSync: string
   recordCount: number
   error?: string
+  notice?: string
   // Amplitude-specific
   charts?: AmplitudeChart[]
   // Typeform-specific

@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "last_updated_utc": "2026-02-21T00:00:00Z",
+  "source": "manual_curated_release_notes",
+  "releases": [
+    {
+      "version": "2.3.2",
+      "release_date": "2026-02-04",
+      "highlights": [
+        "With new features in every nook & cranny, we've been busy behind the scenes squashing bugs and polishing your eeva experience.",
+        "Chat with eeva right from your Time and People tabs.",
+        "Task creation behaves properly - cards and Hive fields now show up as they should.",
+        "Life tab visuals got spruced up.",
+        "Event and day views now stick where you left them - no more surprises.",
+        "Notes toolbar now replaces 'Attachment' with 'Collaborators' to make teamwork a breeze.",
+        "Assigning items to Hive members and special Hives now works. Phew!",
+        "Profile photo previews and menu fonts now look crisp and consistent.",
+        "A few sneaky overlays and display bugs have been squashed. Enjoy!"
+      ]
+    },
+    {
+      "version": "2.3.1",
+      "release_date": "2026-01-23",
+      "highlights": [
+        "Lots of new features means lots of polishing. AKA this update is all about smoother sailing:",
+        "Upload larger documents with no size headaches.",
+        "Taking photos for documents works properly again. Camera tantrum resolved.",
+        "Language preference changes now update instantly.",
+        "Calendar access prompts are clearer and smoother.",
+        "Tasks got leaner with the Location field removed where it wasn't needed.",
+        "Task creation also got clearer with improved Assign to and Save to options.",
+        "Start and end dates now sync up immediately (finally).",
+        "Custom-named appliances now show up exactly where you expect them.",
+        "Fixed a handful of pesky document, notes, and display glitches across the app.",
+        "Notes that were 'deleted but not really' are now actually gone. No ghost notes.",
+        "Same eeva + fewer hiccups + less mental load. Enjoy!"
+      ]
+    },
+    {
+      "version": "2.3.0",
+      "release_date": "2026-01-20",
+      "highlights": [
+        "Ooooo this update is A BIG ONE. We've been busy (like really really busy) building features that make managing life at home truly feel lighter, faster, and way more intuitive.",
+        "Meet eeva AI: your household's digital brain.",
+        "Turn text or voice notes into tasks, events, and notes in seconds.",
+        "Do a full brain-dump and let eeva organize everything for you automatically.",
+        "Ask eeva what you need and she'll track it down for you. Easy peasy.",
+        "Smarter Tasks & Notifications: improved push notifications to help you stay on track, without the overwhelm.",
+        "Assign tasks to your household more easily so everyone knows what's on their plate.",
+        "A Brand New Home Tab: redesigned to be a true household dashboard.",
+        "Pin your most important items so they're always right where you need them.",
+        "A More Organized Life Tab: moved Hives to the Life tab and added new ones to sort life areas like Vehicles, Food, Money, and Health.",
+        "This is a huge new era for you, for your household, and for eeva. Trust us... this update is low-key life changing."
+      ]
+    },
+    {
+      "version": "2.2.2",
+      "release_date": "2026-01-12",
+      "highlights": [
+        "Ooooo this update is A BIG ONE. We've been busy (like really really busy) building features that make managing life at home truly feel lighter, faster, and way more intuitive.",
+        "Meet eeva AI: your household's digital brain.",
+        "Turn text or voice notes into tasks, events, and notes in seconds.",
+        "Do a full brain-dump and let eeva organize everything for you automatically.",
+        "Ask eeva what you need and she'll track it down for you. Easy peasy.",
+        "Smarter Tasks & Notifications: improved push notifications to help you stay on track, without the overwhelm.",
+        "Assign tasks to your household more easily so everyone knows what's on their plate.",
+        "A Brand New Home Tab: redesigned to be a true household dashboard.",
+        "Pin your most important items so they're always right where you need them.",
+        "A More Organized Life Tab: moved Hives to the Life tab and added new ones to sort life areas like Vehicles, Food, Money, and Health.",
+        "This is a huge new era for you, for your household, and for eeva. Trust us... this update is low-key life changing."
+      ]
+    },
+    {
+      "version": "2.2.1",
+      "release_date": "2026-01-06",
+      "highlights": [
+        "Ooooo this update is A BIG ONE. We've been busy (like really really busy) building features that make managing life at home truly feel lighter, faster, and way more intuitive.",
+        "Meet eeva AI: your household's digital brain.",
+        "Turn text or voice notes into tasks, events, and notes in seconds.",
+        "Do a full brain-dump and let eeva organize everything for you automatically.",
+        "Ask eeva what you need and she'll track it down for you. Easy peasy.",
+        "Smarter Tasks & Notifications: improved push notifications to help you stay on track, without the overwhelm.",
+        "Assign tasks to your household more easily so everyone knows what's on their plate.",
+        "A Brand New Home Tab: redesigned to be a true household dashboard.",
+        "Pin your most important items so they're always right where you need them.",
+        "A More Organized Life Tab: moved Hives to the Life tab and added new ones to sort life areas like Vehicles, Food, Money, and Health.",
+        "This is a huge new era for you, for your household, and for eeva. Trust us... this update is low-key life changing."
+      ]
+    }
+  ]
+}

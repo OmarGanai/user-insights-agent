@@ -1,7 +1,7 @@
 ---
 shaping: true
 title: Vector - V2 Plan
-status: draft
+status: completed
 slice: V2
 source_slices_doc: redo/shaping/vector-slices-final.md
 ---
@@ -27,21 +27,21 @@ Replace mock source status with real ingestion pipelines and normalized snapshot
 
 ## Implementation Checklist
 
-- [ ] Define normalized source snapshot schema and status index schema.
-- [ ] Implement `fetch_amplitude` adapter with documented auth/payload handling.
-- [ ] Implement `fetch_typeform` adapter with date/cursor pagination and delayed-response awareness messaging.
-- [ ] Implement iOS release source merge (`read_release_notes_file` + `fetch_itunes_lookup_metadata`).
-- [ ] Implement orchestrator endpoint/tool for full and per-source refresh.
-- [ ] Wire Sources panel refresh control to live refresh action.
-- [ ] Show source freshness and error states in UI from live status index.
-- [ ] Add integration tests for each adapter and status transition behavior.
+- [x] Define normalized source snapshot schema and status index schema.
+- [x] Implement `fetch_amplitude` adapter with documented auth/payload handling.
+- [x] Implement `fetch_typeform` adapter with date/cursor pagination and delayed-response awareness messaging.
+- [x] Implement iOS release source merge (`read_release_notes_file` + `fetch_itunes_lookup_metadata`).
+- [x] Implement orchestrator endpoint/tool for full and per-source refresh.
+- [x] Wire Sources panel refresh control to live refresh action.
+- [x] Show source freshness and error states in UI from live status index.
+- [x] Add integration tests for each adapter and status transition behavior.
 
 ## Verification
 
-- [ ] A full ingest run creates snapshots for all required sources.
-- [ ] Refreshing one source updates only that source status/timestamp.
-- [ ] Error from one source does not block status visibility for others.
-- [ ] Typeform very-recent-data caveat is visible when applicable.
+- [x] A full ingest run creates snapshots for all required sources.
+- [x] Refreshing one source updates only that source status/timestamp.
+- [x] Error from one source does not block status visibility for others.
+- [x] Typeform very-recent-data caveat is visible when applicable.
 
 ## Demo Script
 
